@@ -8,6 +8,8 @@ const K = require('../kern.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'einstellungen.json'), 'utf8'));
+const MODELL = CFG.waerme.modell;
+CFG.waerme.modell = 'ersatzfaktor';   // Messwert-Tests (K9 …): Wärmepumpe wie gemessen; Puffermodell-Tests unten
 const datei = j => path.join(ROOT, 'simulation', 'daten', `jahr_${j}.json`);
 const lade = j => JSON.parse(fs.readFileSync(datei(j), 'utf8'));
 const T = K.TOPS;
@@ -193,3 +195,38 @@ test('PV-Laden: Auto bekommt mehr PV-Strom als beim Sofortladen, Fahrleistung bl
   assert.ok(b.aus_pv > a.aus_pv * 1.5, `${b.aus_pv} vs ${a.aus_pv}`);
   assert.equal(a.km, b.km);
 });
+
+// ------------------------------------------------------------------ Wärmemodell (Puffer, Viertelstunden)
+const hatModell = hatDaten && !!lade(2025).waermemodell;
+const puffer = (f) => { const s = K.ausKonfiguration(CFG); s.waerme.modell = 'puffer'; if (f) f(s); return s; };
+const ALLE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+test('W1 – Puffermodell „heute“: Netzbezug und Einspeisung Allgemein höchstens 5 % neben der Messung', { skip: !hatModell }, () => {
+  const d = lade(2025), r = K.simuliere(d, puffer());
+  const bez = d.bezug_allg.reduce((a, b) => a + b, 0) / 1000, ein = d.rest.reduce((a, b) => a + b, 0) / 1000;
+  assert.ok(Math.abs(r.summe.bezug_allg / bez - 1) < 0.05, `Bezug ${r.summe.bezug_allg} vs ${bez}`);
+  assert.ok(Math.abs(r.summe.rest / ein - 1) < 0.07, `Einspeisung ${r.summe.rest} vs ${ein}`);
+  assert.ok(Math.abs(r.waerme.wp_modell / (d.wp.reduce((a, b) => a + b, 0) / 1000) - 1) < 0.03);
+});
+
+test('W2 – Heizpatrone aus: Wärmepumpe braucht 0,25–0,45 kWh je kWh Heizpatrone mehr', { skip: !hatModell }, () => {
+  const d = lade(2025);
+  const a = K.simuliere(d, puffer()), b = K.simuliere(d, puffer(s => { s.heizpatrone = { aus_monate: ALLE }; }));
+  const je = (b.waerme.wp_modell - a.waerme.wp_modell) / a.waerme.heizpatrone_ist;
+  assert.ok(je > 0.25 && je < 0.45, `je kWh ${je}`);
+  assert.equal(b.waerme.heizpatrone, 0);
+});
+
+test('K8 – Energiebilanz mit Puffermodell (Reihenfolgen, Batterie, PV-Anhebung, Heizpatronen-Regeln)', { skip: !hatModell }, () => {
+  const d = lade(2025);
+  for (const [name, rf] of Object.entries(K.REIHENFOLGEN)) {
+    const r = K.simuliere(d, puffer(s => {
+      s.verteilung.modell = 'dynamisch'; s.reihenfolge = rf; s.heizpatrone = { reserve_kw: 2, aus_stunden: [12] };
+      s.batterie = K.batterie({ kapazitaet_kwh: 10, leistung_kw: 5, versorgt: 'allgemein_und_tops' });
+      s.waerme.pv_anhebung = { ab_kw: 3, plus_k: 8 };
+    }));
+    assert.ok(r.kontrollen.bilanz_max_wh < 1e-6, `${name}: ${r.kontrollen.bilanz_max_wh}`);
+  }
+});
+
+test('Standard-Wärmemodell laut Einstellungen ist das Puffermodell', () => { assert.equal(MODELL, 'puffer'); });

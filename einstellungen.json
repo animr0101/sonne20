@@ -59,6 +59,10 @@
   },
 
   "waerme": {
+    "modell": "puffer",
+    "_modell": "puffer = Viertelstunden-Modell von Pufferspeicher und Wärmepumpen-Regelung (aufbereitung/waermemodell.py, Bericht simulation/ausgabe/waermemodell.md); ersatzfaktor = einfache Rechnung mit Wärmeschuld (Etappen 1–6, reproduziert die Messung exakt)",
+    "pv_anhebung": null,
+    "_pv_anhebung": "Beispiel {\"ab_kw\": 3, \"plus_k\": 8, \"max_c\": 58, \"cop_minus_prozent_je_k\": 2.5}: bei PV-Überschuss ab 3 kW Schaltpunkte am Mittelfühler um 8 K anheben (Stopp höchstens 58 °C), Arbeitszahl −2,5 % je K über dem normalen Stopp",
     "cop_betrieb": 3.5,
     "_cop": "ANNAHME – Typenschild 4,3 bei 35 °C; Puffer wird auf 40–60 °C geheizt, daher niedriger",
     "ersatzfaktor_heizpatrone_monat": {"1": 1.0, "2": 1.0, "3": 1.0, "4": 1.0, "5": 0.9, "6": 0.9, "7": 0.9, "8": 0.9, "9": 1.0, "10": 1.0, "11": 1.0, "12": 1.0},

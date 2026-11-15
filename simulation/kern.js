@@ -48,6 +48,8 @@
         cop: cfg.waerme.cop_betrieb,
         ersatz_monat: Object.fromEntries(Object.entries(cfg.waerme.ersatzfaktor_heizpatrone_monat).map(([m, x]) => [m, x])),
         wp_max_wh: cfg.waerme.wp_max_kwh_viertelstunde * 1000,
+        modell: cfg.waerme.modell || 'ersatzfaktor',               // 'puffer' (Viertelstunden-Modell) | 'ersatzfaktor'
+        pv_anhebung: cfg.waerme.pv_anhebung || null,
       },
       batterie: null,
       preise: {
@@ -219,6 +221,44 @@
     return { anwesend, ankunft, fahrten: fahrten.length, km: kmGes };
   }
 
+  // ------------------------------------------------------------------ Puffermodell
+  /**
+   * Wärmepumpe als Thermostat am Mittelfühler des Puffers (gelernt in aufbereitung/waermemodell.py):
+   * startet unter t_ein, stoppt über t_aus (je Außentemperatur), Strom im Lauf wp_lauf.
+   * Fühler: T += k_wp·WP + k_hp·Heizpatrone − Entnahme (Entnahme je Viertelstunde aus den Messungen rekonstruiert).
+   */
+  function puffer(daten, monat, stunde, anhebung) {
+    const M = daten.waermemodell, R = M.regelung, nacht = new Set(R.nacht);
+    const klasse = (zs, a) => { const K = R.klassen[zs]; for (const k of K) if (a <= k.bis) return k; return K[K.length - 1]; };
+    let T = daten.temp_start, an = false, lauf = 0, pause = 99, starts = 0, hpVorher = 0, tNormal = Infinity;
+    const copMinus = anhebung ? (anhebung.cop_minus_prozent_je_k ?? 2.5) / 100 : 0;
+    return {
+      get T() { return T; },
+      get starts() { return starts; },
+      wp(i, ueberschussWh = 0) {   // Wh Wärmepumpenstrom; ueberschussWh = PV minus übriger Allgemeinverbrauch
+        const zs = hpVorher > R.hp_laeuft_kwh * 1000 ? 'hp' : (nacht.has(stunde[i]) ? 'nacht' : 'tag');
+        const k = klasse(zs, daten.aussen[i] / 10), h = stunde[i];
+        let oe = zs === 'hp' ? 0 : R.stunde_ein[h], oa = zs === 'hp' ? 0 : R.stunde_aus[h];   // Zeitprogramm
+        // PV-Anhebung (SG-Ready o. ä.): bei Überschuss Schaltpunkte anheben, Stopp höchstens bis max_c am Fühler
+        tNormal = k.t_aus + oa;
+        if (anhebung && ueberschussWh >= anhebung.ab_kw * 250) {
+          oe = Math.max(oe, anhebung.plus_k); oa = Math.min(oa + anhebung.plus_k, (anhebung.max_c ?? 58) - k.t_aus);
+        }
+        if (an) { if (T >= k.t_aus + oa && lauf >= R.min_lauf) { an = false; pause = 0; } }
+        else if (T <= k.t_ein + oe && pause >= R.min_pause) { an = true; lauf = 0; starts++; }
+        if (an) { lauf++; return k.wp_lauf * 1000; }
+        pause++; return 0;
+      },
+      waerme(i, wpWh, hpWh) {
+        const b = M.bilanz[M.jahreszeit[String(monat[i])]];
+        // über dem normalen Stopp (nur bei PV-Anhebung): höhere Vorlauftemperatur → schlechtere Arbeitszahl
+        const cop = T > tNormal ? Math.max(0.5, 1 - copMinus * (T - tNormal)) : 1;
+        T += (b.wp * cop * wpWh + b.hp * hpWh - daten.entnahme[i]) / 1000;
+        hpVorher = hpWh;
+      },
+    };
+  }
+
   // ------------------------------------------------------------------ Simulation
   function simuliere(daten, s, optionen = {}) {
     const n = daten.zeit.length, { monat, stunde, tag } = zeitfelder(daten.zeit);
@@ -252,6 +292,10 @@
       waerme_fehlt: 0, wp_nachheizen: 0, standby: 0, ladung: 0, entladung: 0, entladung_tops: 0 };
     const eur = { allg: 0, einspeisung: 0, tops_bezug: 0 };
     let schuld = 0, soc = 0, maxBilanz = 0;
+    // Puffermodell: die gemessene Wärmepumpe wird durch die modellierte ersetzt (in jedem Szenario, auch „heute“).
+    // Varianten deshalb immer mit dem Modelllauf „heute“ vergleichen, nicht mit der Messung.
+    const pm = W.modell === 'puffer' && daten.waermemodell ? puffer(daten, monat, stunde, W.pv_anhebung) : null;
+    let wpModell = 0;
     const tageVoll = new Set(), tageLeer = new Set(), alleTage = new Set();
     const det = optionen.details
       ? { genutzt: new Float64Array(n), rest: new Float64Array(n), bezug_allg: new Float64Array(n), soc: new Float64Array(n) }
@@ -286,8 +330,13 @@
       }
 
       // 1. zusätzlicher Allgemeinverbrauch
-      let extra = 0;
-      if (schuld > 0 && daten.wp[i] > 0) {
+      let extra = 0, minder = 0, wpNeu = 0;
+      if (pm) {
+        wpNeu = pm.wp(i, G0 + hp0 - B0 + daten.wp[i]);
+        const d = wpNeu - daten.wp[i];
+        if (d > 0) extra += d; else minder = -d;
+        sum.wp_nachheizen += d; wpModell += wpNeu;
+      } else if (schuld > 0 && daten.wp[i] > 0) {
         const x = Math.min(schuld, Math.max(0, W.wp_max_wh - daten.wp[i]));
         extra += x; schuld -= x; sum.wp_nachheizen += x;
       }
@@ -308,6 +357,7 @@
       const ausPool = Math.min(pool, extra);
       pool -= ausPool;
       let bezug = B0 + (extra - ausPool);
+      if (minder) { const r = Math.min(bezug, minder); bezug -= r; pool += minder - r; }   // WP läuft weniger als heute
       for (const x of autos) {   // PV-Anteil der Autos am Allgemeinzähler (anteilig an der zusätzlichen Last)
         if (x.a.ort === 'allgemein' && x.p > 0 && extra > 0) { const pv = x.p * ausPool / extra; x.st.aus_pv += pv; evAllgPV += pv; }
       }
@@ -325,7 +375,7 @@
           hp = Math.min(hp0, frei); pool -= hp;
           const fehlt = hp0 - hp;
           sum.waerme_fehlt += fehlt;
-          schuld += fehlt * W.ersatz_monat[String(m)] / W.cop;
+          if (!pm) schuld += fehlt * W.ersatz_monat[String(m)] / W.cop;
         } else if (schritt === 'tops') {
           G = pool;
           // Autos am Wohnungszähler: fester Anteil + PV-Überschuss, den die Wohnungen gerade nicht brauchen
@@ -357,6 +407,7 @@
         }
       }
       const rest = pool;
+      if (pm) pm.waerme(i, wpNeu, hp);
 
       // 3. Batterie entladen
       let entl = 0, entlTops = 0;
@@ -391,7 +442,7 @@
       }
 
       // Kontrolle: PV − Allgemeinverbrauch(gemessen) = (G0 + hp0) − B0  ⇒ Bilanz muss aufgehen
-      const bilanz = (G0 + hp0 - B0) + bezug + entl - extra - hp - eSum - ladung - rest;
+      const bilanz = (G0 + hp0 - B0) + bezug + entl - extra + minder - hp - eSum - ladung - rest;
       maxBilanz = Math.max(maxBilanz, Math.abs(bilanz));
 
       // Summen und Geld
@@ -471,12 +522,13 @@
     return {
       summe: sum, tops, monate, hauskasse, kosten, batterie: bat, eautos, eauto_spitze_kw: evSpitze * 4 / 1000,
       waerme: { heizpatrone: sum.heizpatrone, heizpatrone_ist: sum.heizpatrone_ist, fehlt: sum.waerme_fehlt,
-        wp_nachheizen: sum.wp_nachheizen, offen: kwh(schuld) },
+        wp_nachheizen: sum.wp_nachheizen, offen: kwh(schuld), modell: pm ? 'puffer' : 'ersatzfaktor',
+        ...(pm ? { wp_modell: kwh(wpModell), starts: pm.starts, temp_ende: pm.T } : {}) },
       kontrollen: { bilanz_max_wh: maxBilanz },
       details: det,
     };
   }
 
   return { TOPS, REIHENFOLGEN, PROFILE, ausKonfiguration, batterie, eauto, fahrplan, schluesselAusAnteilen, kopie,
-    zeitraum, zeitfelder, verteile, istSnap, simuliere };
+    zeitraum, zeitfelder, verteile, istSnap, puffer, simuliere };
 });

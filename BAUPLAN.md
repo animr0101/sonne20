@@ -152,6 +152,24 @@ Kennzahlen: Vollzyklen, Stunden leer/voll, eingesparter Netzbezug, entgangene Ei
 - **Warmwasser-Vorgabe:** WP heizt meist bis 55 °C (Kalk), zeitweise 60 °C (Legionellen) – genaue Vorgabe wird erfragt.
   Szenarien dürfen diese Vorgaben nicht verletzen.
 - Ein detailliertes Temperaturmodell kommt nur, wenn dieses einfache Modell zeigt, dass der Effekt relevant ist.
+  → Ist eingetreten, siehe 6.4b. Die einfache Rechnung bleibt als `waerme.modell = "ersatzfaktor"` erhalten.
+
+### 6.4b Puffermodell (Viertelstunden, Etappe 7 – Standard)
+
+Skript `aufbereitung/waermemodell.py`, Bericht `simulation/ausgabe/waermemodell.md`, Rechnung in `kern.js` (`puffer`).
+
+1. **Energiebilanz am Mittelfühler** (Regression je Jahreszeit, 2024–2026, Wetter GeoSphere Austria):
+   ΔT = k_wp·WP-Strom + k_hp·Heizpatrone − Entnahme. 1 kWh Heizpatrone ersetzt am Fühler gemessen
+   0,29–0,49 kWh WP-Strom (Winter am meisten).
+2. **Wärmeentnahme** je Viertelstunde aus den Messungen rekonstruiert (Heizung + Warmwasser + Verluste, wie aufgetreten).
+3. **Regelung** aus den Daten gelernt: Start/Stopp am Fühler je Außentemperatur und Zustand (Tag / Nacht 22–5 Uhr /
+   Heizpatrone läuft), Zeitprogramm je Uhrzeit, Strom im Lauf, Mindestlaufzeit.
+4. **Prüfung 2025:** Fühlertemperatur Median/5 %/95 % trifft die Messung auf ±0,6 K, WP-Strom je Monat ±2 %,
+   Starts 7,8 statt 8,5 pro Tag; Netzbezug Allgemein +2,7 %, Einspeisung +4,9 % (Tests W1, W2, K8).
+5. Im Kern ersetzt die modellierte Wärmepumpe die gemessene – **in jedem Szenario, auch „heute“**. Vergleiche deshalb
+   immer gegen den Modelllauf „heute“. (Ein Mischansatz „Messung + Modelländerung“ wurde geprüft und verworfen:
+   die Laufzeiten von Modell und Wirklichkeit weichen pro Viertelstunde ab, das erzeugt Scheinüberschüsse.)
+6. Option **PV-Anhebung** (`waerme.pv_anhebung`): bei Überschuss Schaltpunkte höher, Arbeitszahl −2,5 %/K darüber.
 
 ### 6.5 E-Autos
 
@@ -258,6 +276,8 @@ sonne/
 ├── aufbereitung/               ← Python: Daten einlesen, Lücken füllen, Kontrollen K1–K7
 │   ├── einlesen.py
 │   ├── pruefen.py
+│   ├── export_json.py          ← Viertelstunden → simulation/daten/jahr_<jahr>.json
+│   ├── waermemodell.py         ← Puffermodell lernen, prüfen, in jahr_<jahr>.json schreiben
 │   └── ausgabe/                ← aufbereitete Viertelstunden-Daten + Prüfbericht
 ├── simulation/                 ← Rechenkern in JavaScript (läuft im Browser UND in den Tests)
 │   ├── kern.js
@@ -272,6 +292,7 @@ sonne/
 **eine** Rechenlogik gibt, die automatisch getestet wird. Python übernimmt nur Einlesen und Prüfen.
 
 Neue Monatsdaten: Dateien in die bestehenden Ordner legen → Aufbereitung neu starten → Kontrollen laufen mit.
+Reihenfolge: `einlesen.py` → `pruefen.py` → `export_json.py` → `waermemodell.py` → `node --test simulation/tests/kern.test.js`.
 
 ## 11. Vorgehen in Etappen
 
@@ -285,6 +306,8 @@ Nach jeder Etappe gibt es einen kurzen Zwischenstand zur Durchsicht, bevor es we
 | 4 ✅ | E-Autos inkl. Eichung an Top 4 | E-Auto-Szenarien |
 | 5 ✅ | Wirtschaftlichkeit, Geldflüsse pro Top | €-Ergebnisse |
 | 6 ✅ | Präsentation | fertige interaktive Präsentation |
+| 7 ✅ | Puffermodell (Viertelstunden) aus Smartfox-Temperatur + Wetter, Varianten neu gerechnet | `waermemodell.md`, `waerme_varianten.md` |
+| 8 | Präsentation auf Puffermodell umstellen (Heizpatronen-Regler, Batterie-Varianten, Empfehlung) | – |
 
 ## 12. Offene Punkte
 
