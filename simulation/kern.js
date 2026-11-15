@@ -222,7 +222,7 @@
   // ------------------------------------------------------------------ Simulation
   function simuliere(daten, s, optionen = {}) {
     const n = daten.zeit.length, { monat, stunde, tag } = zeitfelder(daten.zeit);
-    const P = s.preise, V = s.verteilung, W = s.waerme, B = s.batterie;
+    const P = s.preise, V = s.verteilung, W = s.waerme, B = s.batterie, H = s.heizpatrone || {};
     const schl = Object.fromEntries(TOPS.map(t => [t, (V.schluessel[t] || 0) / 100]));
     const tf = Object.fromEntries(TOPS.map(t => [t, V.teilnahme[t] === 'ist' ? null : V.teilnahme[t] / 100]));
     const reihenfolge = s.reihenfolge.filter(x => x !== 'batterie' || B);
@@ -316,7 +316,11 @@
       let hp = 0, eSum = 0, ladung = 0, G = 0;
       for (const schritt of reihenfolge) {
         if (schritt === 'heizpatrone') {
-          hp = Math.min(hp0, pool); pool -= hp;
+          // Smartfox-Einstellungen: Reserve (Überschuss bis X kW bleibt für die Verteilung), Monate ohne Heizpatrone
+          let frei = pool;
+          if (H.reserve_kw) frei = Math.max(0, pool - H.reserve_kw * 250);
+          if (H.aus_monate && H.aus_monate.includes(m)) frei = 0;
+          hp = Math.min(hp0, frei); pool -= hp;
           const fehlt = hp0 - hp;
           sum.waerme_fehlt += fehlt;
           schuld += fehlt * W.ersatz_monat[String(m)] / W.cop;
