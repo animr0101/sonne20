@@ -298,7 +298,8 @@
     let wpModell = 0;
     const tageVoll = new Set(), tageLeer = new Set(), alleTage = new Set();
     const det = optionen.details
-      ? { genutzt: new Float64Array(n), rest: new Float64Array(n), bezug_allg: new Float64Array(n), soc: new Float64Array(n) }
+      ? { genutzt: new Float64Array(n), rest: new Float64Array(n), bezug_allg: new Float64Array(n), soc: new Float64Array(n),
+        temp: new Float64Array(n) }
       : null;
 
     for (let i = 0; i < n; i++) {
@@ -407,7 +408,7 @@
         }
       }
       const rest = pool;
-      if (pm) pm.waerme(i, wpNeu, hp);
+      if (pm) { if (det) det.temp[i] = pm.T; pm.waerme(i, wpNeu, hp); }
 
       // 3. Batterie entladen
       let entl = 0, entlTops = 0;

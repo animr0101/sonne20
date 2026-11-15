@@ -128,6 +128,15 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .stempel::before { content: "✓"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--pos); color: var(--accent-ink); font-size: 0.8rem; }
 footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 0.88rem; }
 .nurdruck { display: none; }
+.blick { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 22px; display: grid; gap: 14px; margin-top: 8px; }
+.blick h2 { font-size: 1.35rem; }
+.blick-liste { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.blick-liste li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--line-2); }
+.blick-liste li:last-child { border-bottom: 0; padding-bottom: 0; }
+.blick-liste b.wert { font-family: var(--f-display); font-stretch: 110%; font-size: 1.15rem; color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.blick-liste small { grid-column: 1 / -1; color: var(--ink-3); font-size: 0.85rem; }
+@media (max-width: 520px) { .blick-liste li { grid-template-columns: 1fr; } }
+td.gut { color: var(--pos); font-weight: 700; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 @media print {
   nav.kapitel, .steuer .regler, details.tabelle summary, #tip { display: none !important; }
@@ -145,14 +154,18 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
 <nav class="kapitel" aria-label="Kapitel"><div class="wrap" id="navliste"></div></nav>
 
 <header class="kopf"><div class="wrap">
-  <div class="eyebrow">Hausgemeinschaft · Photovoltaik · Auswertung 2025</div>
+  <div class="eyebrow">Hausgemeinschaft · Photovoltaik · Auswertung 2024–2026</div>
   <h1>Unser Sonnenstrom</h1>
   <p class="kernsatz" id="kopf-satz"></p>
   <div>
     <div class="sonnenband" id="kopf-band" role="img"></div>
     <div class="legende" id="kopf-legende" style="margin-top:10px"></div>
   </div>
-  <p class="small">Grundlage: Viertelstunden-Messwerte des Netzbetreibers (Allgemeinzähler, EDA-Verteilung) und des Smartfox, Jahr 2025. Preise brutto laut Rechnungen. Alle Zahlen sind gegen die Rechnungen geprüft (siehe Anhang).</p>
+  <p class="small">Grundlage: Viertelstunden-Messwerte des Netzbetreibers (Allgemeinzähler, EDA-Verteilung) und des Smartfox 2024 bis August 2026, Speichertemperatur, Wetterdaten GeoSphere Austria. Referenzjahr 2025. Preise brutto laut Rechnungen. Alle Zahlen sind gegen die Rechnungen geprüft (siehe Anhang).</p>
+  <div class="blick">
+    <h2>Auf einen Blick</h2>
+    <ol class="blick-liste" id="blick"></ol>
+  </div>
 </div></header>
 
 <section class="kap" id="anlage" data-nav="Anlage"><div class="wrap">
@@ -193,19 +206,32 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
 </div></section>
 
 <section class="kap" id="heizpatrone" data-nav="Heizpatrone"><div class="wrap">
-  <div class="kap-kopf"><div class="eyebrow">Kapitel 4</div><h2>Die Heizpatrone bekommt mehr PV-Strom als alle Wohnungen</h2>
-    <p class="muted">Der Smartfox schickt Überschuss zuerst in die Heizpatrone im Pufferspeicher – erst danach wird an die Wohnungen verteilt. Eine kWh in der Heizpatrone ist aber wenig wert: Die Wärmepumpe macht aus derselben kWh rund 3,5 kWh Wärme.</p></div>
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 4</div><h2>Heizpatrone und Wärmepumpe</h2>
+    <p class="muted">Der Smartfox schickt jeden Überschuss zuerst in die Heizpatrone im Pufferspeicher, erst danach wird an die Wohnungen verteilt. Wie viel diese Wärme wirklich wert ist, zeigt ein Modell, das aus 2,7 Jahren Speichertemperaturen gelernt hat, wie unsere Wärmepumpe regelt.</p></div>
+  <div class="tiles" id="hp-tiles"></div>
   <div class="zwei">
     <div class="karte"><h3>Was ist eine kWh Sonnenstrom wert?</h3><div class="chart" id="ch-wert"></div>
-      <p class="small">Wohnung: vermiedener Netzbezug. Einspeisung: Vergütung 2025. Heizpatrone: eingesparter Wärmepumpenstrom (Allgemeintarif ÷ COP 3,5, im Winter bei ~60 % Ersatz).</p></div>
-    <div class="karte"><h3>Heizpatrone hinter die Wohnungen stellen</h3><div class="tiles" id="hp-tiles"></div>
-      <p>Eine Einstellung am Smartfox, keine Investition. Die Wärmepumpe muss dafür etwas nachheizen – das ist in den Zahlen schon abgezogen. Auch wenn jede kWh der Heizpatrone durch die Wärmepumpe ersetzt werden müsste, bleibt der Vorteil deutlich.</p></div>
+      <p class="small" id="wert-text"></p></div>
+    <div class="karte"><h3>Einstellungen am Smartfox im Vergleich</h3>
+      <p class="small">Vorteil fürs ganze Haus pro Jahr gegenüber heute, alle mit dynamischer Verteilung außer der ersten Zeile.</p>
+      <div class="chart" id="ch-hpvar"></div>
+      <details class="tabelle"><summary>Tabelle anzeigen</summary><div class="tab-scroll" id="tb-hpvar"></div></details></div>
+  </div>
+  <div class="zwei">
+    <div class="karte"><h3>So regelt unsere Wärmepumpe</h3>
+      <p>Die Wärmepumpe startet, wenn der Fühler in der Mitte des Speichers unter eine Schwelle fällt, und stoppt einige Grad darüber. Die Schwellen hängen von der Außentemperatur ab, nachts sind sie deutlich tiefer. Läuft die Heizpatrone, schaltet die Wärmepumpe erst bei höheren Temperaturen.</p>
+      <div class="tab-scroll" id="tb-regel"></div>
+      <p class="small">Start- und Stopptemperatur am Mittelfühler (Median der Messungen 2024–2026). Nacht = 22 bis 5 Uhr.</p></div>
+    <div class="karte"><h3>Stimmt das Modell?</h3>
+      <p>Das Modell steuert die Wärmepumpe für 2025 selbst und wird mit der Messung verglichen.</p>
+      <div class="tab-scroll" id="tb-modell"></div>
+      <div class="hinweis" id="anh-text"></div></div>
   </div>
 </div></section>
 
 <section class="kap" id="rechner" data-nav="Rechner"><div class="wrap">
   <div class="kap-kopf"><div class="eyebrow">Kapitel 5</div><h2>Rechner: Was bringt welche Maßnahme?</h2>
-    <p class="muted">Alle Kombinationen sind mit den Messwerten 2025 vorgerechnet. Vergleich jeweils mit heute (fixe Verteilung, Heizpatrone zuerst, keine Batterie, Wohnungen zahlen nichts für PV-Strom).</p></div>
+    <p class="muted">Alle Kombinationen sind mit den Messwerten 2025 vorgerechnet. Vergleich jeweils mit heute: fixe Verteilung, Heizpatrone bekommt jeden Überschuss, keine Batterie, Wohnungen zahlen nichts für PV-Strom.</p></div>
   <div class="rechner">
     <div class="karte steuer">
       <div class="regler" id="regler"></div>
@@ -227,16 +253,16 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
 
 <section class="kap" id="batterie" data-nav="Batterie"><div class="wrap">
   <div class="kap-kopf"><div class="eyebrow">Kapitel 6</div><h2>Lohnt sich ein Batteriespeicher?</h2>
-    <p class="muted">Ein Speicher am Allgemeinzähler versorgt abends und nachts vor allem die Wärmepumpe. Ob er sich lohnt, entscheidet der Preis: Die Grafik zeigt, bis zu welchem Preis pro kWh Speicher er sich über 15 Jahre bezahlt macht.</p></div>
+    <p class="muted">Ein Speicher am Allgemeinzähler lädt mit dem Strom, der sonst ins Netz ginge, und versorgt abends und nachts vor allem die Wärmepumpe. Ob er sich lohnt, entscheidet der Preis: Die Grafik zeigt, bis zu welchem Preis pro kWh Speicher er sich über 15 Jahre bezahlt macht.</p></div>
   <div class="zwei">
     <div class="karte"><h3>Bis zu diesem Preis lohnt sich die Batterie</h3><div class="chart" id="ch-batt"></div>
       <p class="small" id="batt-text"></p></div>
-    <div class="karte"><h3>Wichtig: Wovon die Batterie lädt</h3>
-      <p>Lädt die Batterie nur aus dem Strom, der sonst ins Netz ginge, steht sie im Winter fast leer – dann nimmt die Heizpatrone alles. Lädt sie <b>vor</b> der Heizpatrone (nach den Wohnungen), bekommt sie das ganze Jahr Strom.</p>
+    <div class="karte"><h3>Was den Wert der Batterie bestimmt</h3>
+      <p>Je weniger die Heizpatrone nimmt, desto mehr bleibt für die Batterie. Mit ausgeschalteter Heizpatrone ist sie am meisten wert.</p>
       <div class="tab-scroll" id="tb-batt"></div>
-      <p class="small">Wechselrichter SolarEdge SE25K ist kein Hybrid-Wechselrichter: Die Batterie braucht einen eigenen Batteriewechselrichter (im Preis pro kWh enthalten zu denken).</p>
-      <p>Gerechnet ist, dass die Batterie <b>nur den Allgemeinstrom</b> versorgt; die Wohnungen profitieren über die Hauskasse. Ob sie auch die Wohnungen direkt versorgen darf, ist rechtlich offen – das Ergebnis ändert sich dadurch kaum:</p>
-      <div class="tab-scroll" id="tb-bv"></div></div>
+      <p>Darf die Batterie auch die Wohnungen versorgen, bringt das <b>weniger</b>: Eine kWh für eine Wohnung spart 22 ct, eine kWh für den Allgemeinstrom 26 ct.</p>
+      <div class="tab-scroll" id="tb-bv"></div>
+      <p class="small">Der Wechselrichter SolarEdge SE25K ist kein Hybrid-Wechselrichter: Die Batterie braucht einen eigenen Batteriewechselrichter. Er ist im Preis pro kWh mitzudenken.</p></div>
   </div>
 </div></section>
 
@@ -257,8 +283,18 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
   </div>
 </div></section>
 
+<section class="kap" id="jahre" data-nav="3 Jahre"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 8</div><h2>Hält das Ergebnis auch in anderen Jahren?</h2>
+    <p class="muted">Alle Maßnahmen wurden zusätzlich mit den Messwerten 2024 und 2026 gerechnet, mit denselben Preisen. 2026 umfasst nur Jänner bis August, die Beträge sind deshalb kleiner.</p></div>
+  <div class="tiles" id="j-tiles"></div>
+  <div class="karte"><h3>Vorteil fürs Haus pro Jahr gegenüber heute</h3>
+    <div class="tab-scroll" id="tb-jahre"></div>
+    <p class="small">Fett: die beste Einstellung im jeweiligen Jahr. Batterie ohne Kaufpreis, also die jährliche Ersparnis.</p></div>
+  <div class="karte"><h3>Die Jahre in Zahlen (gemessen)</h3><div class="tab-scroll" id="tb-jahre-mess"></div></div>
+</div></section>
+
 <section class="kap" id="empfehlung" data-nav="Empfehlung"><div class="wrap">
-  <div class="kap-kopf"><div class="eyebrow">Kapitel 8</div><h2>Empfehlung</h2></div>
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 9</div><h2>Empfehlung</h2></div>
   <div class="empf"><ol id="empf-liste"></ol></div>
 </div></section>
 
@@ -276,7 +312,9 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
       <li>Darf Strom aus einer Batterie in der Gemeinschaftsanlage an die Wohnungen verteilt werden?</li>
       <li>Hausverwaltung: Umsatzsteuer auf einen internen PV-Preis? Vorsteuerabzug der Gemeinschaft? (Gerechnet: alles brutto.)</li>
       <li>Elektriker: Reicht der Hausanschluss für mehrere Wallboxen gleichzeitig?</li>
-      <li>Warmwasser: Mindesttemperatur und Legionellen-Schaltung (55 / 60 °C).</li>
+      <li>Installateur: Kann der Smartfox die Heizpatrone abschalten (nur Notheizung) oder eine Reserve von 3 kW für die Wohnungen lassen?</li>
+      <li>Installateur: Welche Zeitprogramme laufen um 5 Uhr und um 14 Uhr (Legionellen?), und welche Warmwassertemperatur ist nötig (55 / 60 °C)?</li>
+      <li>Installateur: Warum befolgt die Wärmepumpe die PV-Anhebung nicht?</li>
     </ul></div>
 </div></section>
 
@@ -421,7 +459,7 @@ function geld(k, p, invest = 0) {
 
 // ------------------------------------------------------------ Kapitel 1: Fluss, Anlage, Geschichte
 const I = D.ist;
-const pct = (a, b) => de(a / b * 100) + ' %';
+const pct = (a, b) => de(a / b * 100) + '\u00a0%';
 $('kopf-satz').innerHTML = `Unsere Anlage hat 2025 <em>${de(I.pv)} kWh</em> Sonnenstrom erzeugt. Die zehn Wohnungen konnten davon nur <em>${pct(I.tops_genutzt, I.pv)}</em> nutzen – ${pct(I.rest, I.pv)} gingen ins Netz.`;
 const verw = [['Allgemeinstrom direkt (Wärmepumpe, Lift, Licht …)', I.allg_direkt, FARBE.allg], ['Heizpatrone im Pufferspeicher', I.heizpatrone, FARBE.hp],
   ['von den Wohnungen genutzt', I.tops_genutzt, FARBE.tops], ['ins Netz eingespeist', I.rest, FARBE.rest]];
@@ -482,9 +520,9 @@ zeichne.push(zeigeTag);
 // ------------------------------------------------------------ Kapitel 3/4: Verteilung, Heizpatrone (Standardpreise)
 const stdP = preise({ fP: 100, fE: 100, pI: 0 });
 const R = D.raster;
-const heute = R[schluessel('statisch', 'vor', 0, 'sofort', 0)];
+const heute = R[schluessel('statisch', 'heute', 0, 'sofort', 0)];   // Modelllauf „heute“
 const gHeute = geld(heute, stdP);
-const kDyn = R[schluessel('dynamisch', 'vor', 0, 'sofort', 0)], kB = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 0)];
+const kDyn = R[schluessel('dynamisch', 'heute', 0, 'sofort', 0)], kRes = R[schluessel('dynamisch', 'reserve', 0, 'sofort', 0)], kAus = R[schluessel('dynamisch', 'aus', 0, 'sofort', 0)];
 const vorteil = (k, inv = 0) => gHeute.haus - geld(k, stdP, inv).haus;
 $('vt-tiles').innerHTML = [
   ['Heute (fix)', `${de(heute.gen)} kWh`, 'von den Wohnungen genutzt'],
@@ -495,23 +533,61 @@ zeichne.push(() => balken('ch-vt', T.map((t, i) => ({ name: `Top ${t}`, wert: kD
 legende('lg-vt', [['Mehr genutzter PV-Strom pro Jahr mit dynamischer Verteilung', 'var(--pos)']]);
 $('tb-top10').innerHTML = tabelle(['Top 10 nimmt teil mit', 'von Wohnungen genutzt', 'Vorteil Haus/Jahr'],
   [['17 % (heute)', 0], ['50 %', 1], ['100 %', 2]].map(([l, i]) => [l, de(D.top10[i].gen) + ' kWh', vz(vorteil(D.top10[i])) + ' €']));
-$('tb-top10').insertAdjacentHTML('beforeend', '<p class="small" style="margin-top:6px">Jeweils mit dynamischer Verteilung und Heizpatrone hinter den Wohnungen.</p>');
+$('tb-top10').insertAdjacentHTML('beforeend', '<p class="small" style="margin-top:6px">Jeweils mit dynamischer Verteilung und ausgeschalteter Heizpatrone.</p>');
 
-const wertHP = P0.allgemein_ct / 3.5 * 0.6, eAvg = P0.einspeisung_ct.reduce((a, b) => a + b, 0) / 12;
-zeichne.push(() => balken('ch-wert', [{ name: 'an eine Wohnung', wert: P0.top_ct, farbe: FARBE.tops }, { name: 'eingespeist (Ø)', wert: eAvg, farbe: FARBE.rest },
-  { name: 'Heizpatrone (Winter)', wert: wertHP, farbe: FARBE.hp }], { einheit: 'ct', nk: 1 }));
+// Heizpatrone: was 1 kWh Heizpatrone der Wärmepumpe erspart (Modell, 2025)
+const J25 = D.jahre[2025].var;
+const jeKwh = (J25.fix_aus.wp - J25.fix.wp) / J25.fix.hp;
+const wertHP = P0.allgemein_ct * jeKwh, eAvg = P0.einspeisung_ct.reduce((a, b) => a + b, 0) / 12;
 $('hp-tiles').innerHTML = [
-  ['Heizpatrone bekommt', `${de(kDyn.hp - kB.hp)} kWh`, 'weniger PV-Strom pro Jahr'],
-  ['Wohnungen nutzen', `${de(kB.gen - kDyn.gen)} kWh`, 'mehr PV-Strom pro Jahr'],
-  ['Wärmepumpe heizt nach', `${de(kB.wpn)} kWh`, 'Strom, teils aus PV'],
-  ['Vorteil fürs Haus', `${vz(vorteil(kB) - vorteil(kDyn))} €`, 'pro Jahr, zusätzlich zu dynamisch', true],
+  ['Heizpatrone bekommt heute', `${de(I.heizpatrone)} kWh`, `mehr als alle Wohnungen zusammen (${de(I.tops_genutzt)} kWh)`],
+  ['1 kWh Heizpatrone erspart', `${de(jeKwh, 2)} kWh`, 'Wärmepumpenstrom (Modell)'],
+  ['Ohne Heizpatrone braucht die WP', `${vz(J25.fix_aus.wp - J25.fix.wp)} kWh`, `davon nur ${de(J25.fix_aus.b - J25.fix.b)} kWh aus dem Netz`],
+  ['Heizpatrone aus + dynamisch', `${vz(vorteil(kAus))} €`, 'Vorteil fürs Haus pro Jahr', true],
 ].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+zeichne.push(() => balken('ch-wert', [{ name: 'an eine Wohnung', wert: P0.top_ct, farbe: FARBE.tops }, { name: 'eingespeist (Ø)', wert: eAvg, farbe: FARBE.rest },
+  { name: 'Heizpatrone', wert: wertHP, farbe: FARBE.hp }], { einheit: 'ct', nk: 1 }));
+$('wert-text').textContent = `Wohnung: vermiedener Netzbezug. Einspeisung: Vergütung 2025 im Durchschnitt. Heizpatrone: höchstens ${de(jeKwh, 2)} kWh eingesparter Wärmepumpenstrom × ${de(P0.allgemein_ct, 1)} ct. Die Wärmepumpe macht aus 1 kWh Strom 3 bis 4 kWh Wärme, die Heizpatrone nur 1 kWh, und ein Teil davon heizt den Speicher nur über das Nötige hinaus.`;
+const HPVAR = [['fix', 'fix_aus', 'fix, Heizpatrone aus'], ['dyn', 'dyn', 'Heizpatrone wie heute'], ['fen', 'fenster', '11–15 Uhr gesperrt'], ['sch', 'schwelle', 'erst ab 3 kW Überschuss'],
+  ['res', 'reserve', '3 kW Reserve'], ['aus', 'aus', 'nur Notheizung (aus)'], ['anh', 'aus_anh', 'aus + PV-Anhebung WP']];
+const vJ = (j, n) => geld(D.jahre[j].var.fix, stdP).haus - geld(D.jahre[j].var[n], stdP).haus;
+zeichne.push(() => balken('ch-hpvar', HPVAR.map(([, n, name]) => ({ name, wert: vJ(2025, n), farbe: n === 'aus' ? 'var(--accent)' : n === 'aus_anh' ? 'var(--ink-3)' : 'var(--s-tops)',
+  tip: `<b>${name}</b><br>Heizpatrone ${de(J25[n].hp)} kWh<br>Wärmepumpe ${vz(J25[n].wp - J25.fix.wp)} kWh<br>Netzbezug Allgemein ${vz(J25[n].b - J25.fix.b)} kWh<br>Wohnungen nutzen ${de(J25[n].gen)} kWh` }))));
+$('tb-hpvar').innerHTML = tabelle(['Einstellung', 'Heizpatrone', 'Wärmepumpe', 'Netzbezug Allg.', 'Wohnungen nutzen', 'Vorteil/Jahr'],
+  HPVAR.map(([, n, name]) => [name, de(J25[n].hp) + ' kWh', vz(J25[n].wp - J25.fix.wp) + ' kWh', vz(J25[n].b - J25.fix.b) + ' kWh', de(J25[n].gen) + ' kWh', vz(vJ(2025, n)) + ' €']),
+  ['heute (fix, Heizpatrone wie heute)', de(J25.fix.hp) + ' kWh', de(J25.fix.wp) + ' kWh', de(J25.fix.b) + ' kWh', de(J25.fix.gen) + ' kWh', '–']);
+const RG = D.waerme.regelung, KL = RG.klassen;
+$('tb-regel').innerHTML = tabelle(['außen', 'Tag', 'Nacht', 'mit Heizpatrone'],
+  KL.tag.map((k, i) => [i === KL.tag.length - 1 ? `über ${de(KL.tag[i - 1].bis)} °C` : `bis ${de(k.bis)} °C`,
+    ...['tag', 'nacht', 'hp'].map(z => `${de(KL[z][i].t_ein)}–${de(KL[z][i].t_aus)} °C`)]));
+const W0 = D.waerme;
+$('tb-modell').innerHTML = tabelle(['2025', 'Messung', 'Modell'], [
+  ['Speicher Mitte: kälteste 5 %', de(W0.mess_temp[0], 1) + ' °C', de(W0.modell_temp[0], 1) + ' °C'],
+  ['Speicher Mitte: Median', de(W0.mess_temp[1], 1) + ' °C', de(W0.modell_temp[1], 1) + ' °C'],
+  ['Speicher Mitte: wärmste 5 %', de(W0.mess_temp[2], 1) + ' °C', de(W0.modell_temp[2], 1) + ' °C'],
+  ['Wärmepumpenstrom', de(W0.mess_wp) + ' kWh', de(W0.modell_wp) + ' kWh'],
+  ['Allgemeinstrom aus dem Netz', de(I.bezug_allg) + ' kWh', de(heute.b) + ' kWh'],
+]);
+$('anh-text').innerHTML = `<b>PV-Anhebung:</b> Würde die Wärmepumpe bei Sonnenüberschuss höher heizen, brächte das mit ausgeschalteter Heizpatrone nur ${vz(vJ(2025, 'aus_anh') - vJ(2025, 'aus'))} € mehr pro Jahr, weil sie bei höherer Temperatur schlechter arbeitet. Heute befolgt sie das Signal ohnehin nicht.`;
+
+// fairer interner PV-Preis: Vorteil verteilt sich möglichst genau nach Anteilen
+function fairerPreis(k, ref) {
+  let best = null;
+  for (let pI = 0; pI <= 25; pI += 0.5) {
+    const g = geld(k, preise({ fP: 100, fE: 100, pI })), gr = geld(ref, stdP);
+    const je = T.map((_, i) => (g.netto[i] - gr.netto[i]) / anteile[i]);
+    const spanne = Math.max(...je) - Math.min(...je);
+    if (!best || spanne < best.spanne) best = { pI, spanne, min: Math.min(...T.map((_, i) => g.netto[i] - gr.netto[i])) };
+  }
+  return best;
+}
+const fair = fairerPreis(kAus, heute);
 
 // ------------------------------------------------------------ Kapitel 5: Rechner
-const st = { vt: 'dynamisch', hp: 'hinter', batt: 0, bv: 'allgemein', bPreis: W.batterie_preis, autos: 0, strat: 'pv', top4: 'sofort', pI: 13, fP: 100, fE: 100 };
+const st = { vt: 'dynamisch', hp: 'aus', batt: 0, bv: 'allgemein', bPreis: W.batterie_preis, autos: 0, strat: 'pv', top4: 'sofort', pI: fair.pI, fP: 100, fE: 100 };
 const SEG = [
   ['vt', 'Verteilung', [['statisch', 'fix (heute)'], ['dynamisch', 'dynamisch']]],
-  ['hp', 'Heizpatrone', [['vor', 'vor den Wohnungen (heute)'], ['hinter', 'hinter den Wohnungen']]],
+  ['hp', 'Heizpatrone', [['heute', 'wie heute'], ['reserve', '3 kW Reserve'], ['aus', 'nur Notheizung']]],
   ['top4', 'E-Auto Top 4 lädt', [['sofort', 'sofort (heute)'], ['pv', 'mit PV-Überschuss']]],
   ['strat', 'Weitere E-Autos laden', [['sofort', 'sofort'], ['pv', 'mit PV-Überschuss']]],
   ['bv', 'Batterie versorgt (rechtlich offen)', [['allgemein', 'nur Allgemeinstrom'], ['allgemein_und_tops', 'auch die Wohnungen']]],
@@ -529,7 +605,7 @@ $('regler').innerHTML = SEG.map(([k, n, opts]) => `<div class="regel"><span clas
   + `<button type="button" id="r-paketB" class="knopf">Empfehlung einstellen</button>`;
 $('regler').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'r-paketB') { Object.assign(st, { vt: 'dynamisch', hp: 'hinter', batt: 0, bv: 'allgemein', pI: 13, fP: 100, fE: 100 }); RANGE.forEach(([k, , , , , , , rueck]) => { $('r-' + k).value = rueck ? rueck(st[k]) : st[k]; }); rechne(); return; }
+  if (b.id === 'r-paketB') { Object.assign(st, { vt: 'dynamisch', hp: 'aus', batt: 0, bv: 'allgemein', pI: fair.pI, fP: 100, fE: 100 }); RANGE.forEach(([k, , , , , , , rueck]) => { $('r-' + k).value = rueck ? rueck(st[k]) : st[k]; }); rechne(); return; }
   const g = b.closest('.segment'); if (!g || !g.dataset.k) return;
   st[g.dataset.k] = b.dataset.v; rechne();
 });
@@ -542,7 +618,7 @@ function rechne() {
   document.querySelectorAll('.segment[data-k="bv"] button').forEach(b => { b.disabled = st.batt === 0; });
   const p = preise(st), p0 = preise({ ...st, pI: 0 });
   const k = R[schluessel(st.vt, st.hp, st.batt, st.top4, st.autos, st.strat, st.bv)];
-  const ref = R[schluessel('statisch', 'vor', 0, 'sofort', st.autos, 'sofort')];   // heute, gleiche Autos, laden sofort
+  const ref = R[schluessel('statisch', 'heute', 0, 'sofort', st.autos, 'sofort')];   // heute, gleiche Autos, laden sofort
   const g = geld(k, p, st.batt * st.bPreis), gr = geld(ref, p0);
   const vorteilHaus = gr.haus - g.haus;
   $('r-tiles').innerHTML = [
@@ -586,30 +662,23 @@ zeichne.push(rechne);
 
 // ------------------------------------------------------------ Kapitel 6: Batterie
 const BATT = [5, 10, 15, 20, 30];
-const kBohne = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 0)];
-const lohntBis = kw => { const mit = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0)]; return (geld(kBohne, stdP).haus - geld(mit, stdP).haus) * barwertFaktor / kw; };
+const ersparnisBatt = (kw, hp = 'aus', bv = 'allgemein') => geld(R[schluessel('dynamisch', hp, 0, 'sofort', 0)], stdP).haus - geld(R[schluessel('dynamisch', hp, kw, 'sofort', 0, 'sofort', bv)], stdP).haus;
+const lohntBis = (kw, hp = 'aus', bv = 'allgemein') => ersparnisBatt(kw, hp, bv) * barwertFaktor / kw;
 zeichne.push(() => balken('ch-batt', BATT.map(kw => ({ name: `${kw} kWh`, wert: lohntBis(kw), text: `${de(lohntBis(kw))} €/kWh`,
-  tip: `<b>Batterie ${kw} kWh</b><br>lohnt sich bis ${de(lohntBis(kw))} €/kWh<br>= ${de(lohntBis(kw) * kw)} € Gesamtpreis` })),
+  tip: `<b>Batterie ${kw} kWh</b><br>spart ${de(ersparnisBatt(kw))} € pro Jahr<br>lohnt sich bis ${de(lohntBis(kw))} €/kWh<br>= ${de(lohntBis(kw) * kw)} € Gesamtpreis` })),
   { einheit: '€/kWh', linie: W.batterie_preis, linieText: `Platzhalter ${de(W.batterie_preis)} €/kWh` }));
-$('batt-text').textContent = `Barwert über ${W.lebensdauer} Jahre bei ${W.zins} % Zins, Strompreis +2 %/Jahr, Alterung −2 %/Jahr. Mit dynamischer Verteilung und Heizpatrone hinter den Wohnungen; Batterie lädt nach den Wohnungen und vor der Heizpatrone. Liegt ein Angebot unter dem Balken, rechnet sich die Batterie.`;
-const kNachTops = R[schluessel('dynamisch', 'vor', 10, 'sofort', 0)], kDyn0 = R[schluessel('dynamisch', 'vor', 0, 'sofort', 0)];
-const kVorHP = R[schluessel('dynamisch', 'hinter', 10, 'sofort', 0)];
-const e1 = geld(kDyn0, stdP).haus - geld(kNachTops, stdP).haus, e2 = geld(kBohne, stdP).haus - geld(kVorHP, stdP).haus;
-$('tb-batt').innerHTML = tabelle(['10-kWh-Batterie lädt …', 'Ersparnis/Jahr', 'lohnt bis'], [
-  ['nur aus dem Restüberschuss', de(e1) + ' €', de(e1 * barwertFaktor / 10) + ' €/kWh'],
-  ['nach den Wohnungen, vor der Heizpatrone', de(e2) + ' €', de(e2 * barwertFaktor / 10) + ' €/kWh']]);
-
-const bvZeilen = [10, 20].map(kw => {
-  const a = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0, 'sofort', 'allgemein')], b = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0, 'sofort', 'allgemein_und_tops')];
-  const ea = geld(kBohne, stdP).haus - geld(a, stdP).haus, eb = geld(kBohne, stdP).haus - geld(b, stdP).haus;
+$('batt-text').textContent = `Barwert über ${W.lebensdauer} Jahre bei ${W.zins} % Zins, Strompreis +2 %/Jahr, Alterung −2 %/Jahr. Mit dynamischer Verteilung und ausgeschalteter Heizpatrone; die Batterie versorgt den Allgemeinstrom. Liegt ein Angebot (inkl. Montage) unter dem Balken, rechnet sich die Batterie.`;
+$('tb-batt').innerHTML = tabelle(['10-kWh-Batterie, Heizpatrone …', 'Ersparnis/Jahr', 'lohnt bis'],
+  [['wie heute', 'heute'], ['3 kW Reserve', 'reserve'], ['nur Notheizung (aus)', 'aus']].map(([n, hp]) => [n, de(ersparnisBatt(10, hp)) + ' €', de(lohntBis(10, hp)) + ' €/kWh']));
+$('tb-bv').innerHTML = tabelle(['Batterie', 'nur Allgemeinstrom', 'auch Wohnungen', 'Unterschied'], [10, 20].map(kw => {
+  const ea = ersparnisBatt(kw), eb = ersparnisBatt(kw, 'aus', 'allgemein_und_tops');
   return [`${kw} kWh`, de(ea) + ' €', de(eb) + ' €', vz(eb - ea) + ' €'];
-});
-$('tb-bv').innerHTML = tabelle(['Batterie', 'nur Allgemeinstrom', 'auch Wohnungen', 'Unterschied'], bvZeilen);
+}));
 
 // ------------------------------------------------------------ Kapitel 7: E-Autos
 const evZeilen = [];
 for (const strat of ['sofort', 'pv']) {
-  const k = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 4, strat)];
+  const k = R[schluessel('dynamisch', 'aus', 0, 'sofort', 4, strat)];
   k.ev.slice(1).forEach(a => evZeilen.push({ a, strat }));
 }
 const evNamen = { pendler: 'Pendler', homeoffice: 'Homeoffice', wenigfahrer: 'Wenigfahrer', top4: 'Top 4' };
@@ -617,15 +686,53 @@ zeichne.push(() => balken('ch-ev', evZeilen.map(({ a, strat }) => ({ name: `${ev
   text: `${de(a.pv / a.gel * 100)} %`, tip: `<b>${a.n}, ${evNamen[a.p]}</b><br>${strat === 'pv' ? 'PV-Überschussladen' : 'lädt sofort'}<br>${de(a.km)} km, ${de(a.gel)} kWh geladen<br>davon ${de(a.pv)} kWh aus PV` })), { einheit: '%' }));
 legende('lg-ev', [['lädt sofort', FARBE.rest], ['mit PV-Überschuss', FARBE.tops]]);
 
-// ------------------------------------------------------------ Kapitel 8: Empfehlung
-const vB = vorteil(kB), vDyn = vorteil(kDyn);
+// ------------------------------------------------------------ Kapitel 8: drei Jahre
+const JAHRE = Object.keys(D.jahre);
+const JVAR = [...HPVAR.slice(0, 6), ['b10', 'aus_b10', 'aus + Batterie 10 kWh']];
+const jText = j => D.jahre[j].monate < 12 ? `${j} (Jän–Aug)` : j;
+const besteJ = Object.fromEntries(JAHRE.map(j => [j, HPVAR.slice(0, 6).map(([, n]) => n).reduce((a, n) => vJ(j, n) > vJ(j, a) ? n : a, 'dyn')]));
+$('tb-jahre').innerHTML = tabelle(['Einstellung', ...JAHRE.map(jText)],
+  JVAR.map(([, n, name]) => [name, ...JAHRE.map(j => (besteJ[j] === n ? '<b>' : '') + vz(vJ(j, n)) + ' €' + (besteJ[j] === n ? '</b>' : ''))]));
+const rang = j => HPVAR.slice(0, 6).map(([, n]) => n).sort((a, b) => vJ(j, b) - vJ(j, a)).join();
+const gleich = JAHRE.every(j => rang(j) === rang('2025'));
+const top2 = JAHRE.every(j => rang(j).split(',').slice(0, 2).join() === 'aus,reserve');
+const bVon = Math.min(...JAHRE.filter(j => D.jahre[j].monate === 12).map(j => vJ(j, 'aus'))), bBis = Math.max(...JAHRE.filter(j => D.jahre[j].monate === 12).map(j => vJ(j, 'aus')));
+const lohntJ = j => (geld(D.jahre[j].var.aus, stdP).haus - geld(D.jahre[j].var.aus_b10, stdP).haus) * barwertFaktor / 10;
+$('j-tiles').innerHTML = [
+  ['Beste Einstellung', JAHRE.every(j => besteJ[j] === 'aus') ? 'immer: Heizpatrone aus' : 'unterschiedlich', 'mit dynamischer Verteilung', true],
+  ['Vorteil pro Jahr', `${de(bVon)} bis ${de(bBis)} €`, 'Heizpatrone aus + dynamisch, 2024 und 2025'],
+  gleich ? ['Reihenfolge der Einstellungen', 'in allen Jahren gleich', 'kein Zufall eines einzelnen Jahres']
+    : ['Platz 1 und 2', top2 ? 'in jedem Jahr gleich' : 'unterschiedlich', 'Notheizung vor 3 kW Reserve'],
+  ['10-kWh-Batterie lohnt bis', `${de(lohntJ(2024))} / ${de(lohntJ(2025))} €/kWh`, '2024 / 2025'],
+].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+$('tb-jahre-mess').innerHTML = tabelle(['', ...JAHRE.map(jText)], [
+  ['PV-Erzeugung', ...JAHRE.map(j => de(D.jahre[j].mess.pv) + ' kWh')],
+  ['Heizpatrone', ...JAHRE.map(j => de(D.jahre[j].mess.hp) + ' kWh')],
+  ['Wärmepumpe (Strom)', ...JAHRE.map(j => de(D.jahre[j].mess.wp) + ' kWh')],
+  ['Von den Wohnungen genutzt', ...JAHRE.map(j => de(D.jahre[j].mess.tops_genutzt) + ' kWh')],
+  ['Allgemeinstrom aus dem Netz', ...JAHRE.map(j => de(D.jahre[j].mess.bezug) + ' kWh')],
+  ['Ins Netz eingespeist (Rest)', ...JAHRE.map(j => de(D.jahre[j].mess.rest) + ' kWh')],
+]);
+
+// ------------------------------------------------------------ Kapitel 9: Empfehlung
+const vAus = vorteil(kAus), vRes = vorteil(kRes), vDyn = vorteil(kDyn);
+const l10 = Math.round(lohntBis(10) / 10) * 10;
 $('empf-liste').innerHTML = [
-  `<div><h3>Heizpatrone hinter die Wohnungen stellen</h3><p>Eine Einstellung am Smartfox. Bringt zusammen mit der dynamischen Verteilung <b>${vz(vB)} € pro Jahr</b> – ohne Investition. Mit der Installationsfirma klären, wie die Heizpatrone erst den Überschuss nach den Wohnungen bekommt.</p></div>`,
-  `<div><h3>Auf dynamische Verteilung umstellen</h3><p>Beim Netzbetreiber beantragen. Allein ${vz(vDyn)} € pro Jahr, und sie ist die Voraussetzung dafür, dass E-Autos und Heizpatronen-Umstellung bei den Wohnungen ankommen.</p></div>`,
-  `<div><h3>Einen internen PV-Preis von etwa 13 ct beschließen</h3><p>Dann verteilt sich der Vorteil fast genau nach den Anteilen, und kein Top steht schlechter da als heute. Umsatzsteuer-Frage vorher mit der Hausverwaltung klären.</p></div>`,
-  `<div><h3>Batterie: Angebot einholen, wenn es passt</h3><p>Eine 10-kWh-Batterie lohnt sich bis etwa <b>${de(Math.round(lohntBis(10) / 10) * 10)} €/kWh</b> (inkl. eigenem Batteriewechselrichter und Montage). Wichtig: Sie muss vor der Heizpatrone laden dürfen.</p></div>`,
+  `<div><h3>Heizpatrone nur noch als Notheizung</h3><p>Die PV-Ansteuerung am Smartfox abschalten. Die Wärmepumpe übernimmt die Wärme und braucht dafür rund ${de(Math.round((J25.fix_aus.wp - J25.fix.wp) / 100) * 100)} kWh mehr Strom, großteils aus der Sonne. Der frei werdende Überschuss geht an die Wohnungen. Zusammen mit der dynamischen Verteilung <b>${vz(vAus)} € pro Jahr</b>, ohne Investition. Geht das nicht, ist eine Reserve von 3 kW für die Wohnungen die zweitbeste Lösung (${vz(vRes)} €).</p></div>`,
+  `<div><h3>Auf dynamische Verteilung umstellen</h3><p>Beim Netzbetreiber beantragen. Allein ${vz(vDyn)} € pro Jahr, und sie ist die Voraussetzung dafür, dass der frei werdende Strom und das E-Auto-Laden bei den Wohnungen ankommen.</p></div>`,
+  `<div><h3>Einen internen PV-Preis von etwa ${de(fair.pI, 1)} ct beschließen</h3><p>Die Wohnungen zahlen für genutzten Sonnenstrom an die Hauskasse. Dann verteilt sich der Vorteil fast genau nach den Anteilen${fair.min >= 0 ? ', und kein Top steht schlechter da als heute' : ''}. Umsatzsteuer-Frage vorher mit der Hausverwaltung klären.</p></div>`,
+  `<div><h3>Batterie nur bei einem günstigen Angebot</h3><p>Eine 10-kWh-Batterie lohnt sich bis etwa <b>${de(l10)} €/kWh</b> inklusive eigenem Batteriewechselrichter und Montage. Teurere Angebote rechnen sich über 15 Jahre nicht.</p></div>`,
   `<div><h3>E-Autos: Wallboxen mit PV-Überschussladen</h3><p>Spart rund 100 € pro Auto und Jahr. Vorher die Anschlussleistung (6 kW je Wohnung, Hausanschluss) mit Netzbetreiber und Elektriker klären.</p></div>`,
 ].map(x => `<li>${x}</li>`).join('');
+
+// ------------------------------------------------------------ Auf einen Blick
+$('blick').innerHTML = [
+  ['Die Heizpatrone bekommt mehr Sonnenstrom als alle Wohnungen zusammen, spart aber pro kWh nur etwa ein Drittel kWh Wärmepumpenstrom.', `${de(I.heizpatrone)} kWh`, 'Heizpatrone 2025, gemessen'],
+  ['Heizpatrone nur als Notheizung und dynamische Verteilung', `${vz(vAus)} €/Jahr`, 'Vorteil fürs ganze Haus, ohne Investition'],
+  ['Geht die Heizpatrone nicht ganz aus: 3 kW Reserve für die Wohnungen', `${vz(vRes)} €/Jahr`, 'zweitbeste Einstellung'],
+  ['Eine Batterie (10 kWh) rechnet sich nur bei einem Angebot unter', `${de(l10)} €/kWh`, 'inkl. Batteriewechselrichter und Montage, über 15 Jahre'],
+  ['Ergebnis mit 2024, 2025 und 2026 geprüft', JAHRE.every(j => besteJ[j] === 'aus') ? 'hält' : 'unsicher', 'die beste und zweitbeste Einstellung sind in jedem Jahr dieselben'],
+].map(([t, w, k]) => `<li><span>${t}</span><b class="wert">${w}</b><small>${k}</small></li>`).join('');
 
 // ------------------------------------------------------------ Anhang
 const pr = D.pruef;
@@ -635,15 +742,18 @@ $('pruef').innerHTML = `<p class="stempel">Alle Kontrollen bestanden</p>` + tabe
   ['Verteilung des Netzbetreibers nachgerechnet', `${de(pr.k9_werte)} Werte, größte Abweichung ${de(pr.k9_max_wh, 1)} Wh`],
   ['E-Auto-Modell geeicht an Top 4', '1.656 kWh simuliert / 1.654 kWh gemessen'],
   ['Viertelstunden mit geschätzter PV (Smartfox-Lücken)', de(pr.anteil_geschaetzt * 100, 1) + ' %'],
+  ['Wärmemodell: Speichertemperatur Median Messung / Modell', `${de(W0.mess_temp[1], 1)} / ${de(W0.modell_temp[1], 1)} °C`],
+  ['Wärmemodell: Wärmepumpenstrom Messung / Modell', `${de(W0.mess_wp)} / ${de(W0.modell_wp)} kWh`],
 ]);
 $('tb-annahmen').innerHTML = tabelle(['Annahme', 'Wert'], [
   ['Strompreis Allgemein (brutto)', de(P0.allgemein_ct, 2) + ' ct/kWh'], ['Strompreis Wohnung (brutto)', `${de(P0.top_ct, 2)} ct, Sommer 10–16 Uhr ${de(P0.top_snap_ct, 2)} ct`],
-  ['Einspeisevergütung', `Monatswerte 2025, Ø ${de(eAvg, 2)} ct`], ['Wärmepumpe COP im Betrieb', '3,5 (Typenschild 4,3 bei 35 °C)'],
-  ['Heizpatronen-Wärme ersetzt Wärmepumpe', 'Okt–Apr 60 %, Mai–Sep 20 % (aus Daten geschätzt)'],
+  ['Einspeisevergütung', `Monatswerte 2025, Ø ${de(eAvg, 2)} ct`], ['Wärmepumpe', 'Viertelstunden-Modell: Schaltpunkte am Speicherfühler aus den Messdaten gelernt, Wärmebedarf aus Messung und Wetter 2024–2026'],
+  ['Vergleiche', 'immer gegen den Modelllauf „heute“, damit Modellfehler sich aufheben'],
+  ['Andere Jahre', 'gleiche Preise wie 2025, 2026 nur Jänner bis August'],
   ['Batterie', 'Wirkungsgrad 90 %, 20 W Eigenverbrauch, 15 Jahre, 3 % Zins'],
   ['E-Autos', '18 kWh/100 km (Winter +25 %), 11 kW, 10 % Ladeverluste'],
 ]);
-$('fuss').innerHTML = `Erstellt am ${new Date(D.erstellt).toLocaleDateString('de-AT')} aus den Messdaten ${D.referenzjahr}. Alle Beträge brutto pro Jahr; Grund- und Messpreise ändern sich durch die Maßnahmen nicht und sind nicht enthalten.`;
+$('fuss').innerHTML = `Erstellt am ${new Date(D.erstellt).toLocaleDateString('de-AT')} aus den Messdaten 2024 bis August 2026, Referenzjahr ${D.referenzjahr}. Alle Beträge brutto pro Jahr; Grund- und Messpreise ändern sich durch die Maßnahmen nicht und sind nicht enthalten.`;
 
 // ------------------------------------------------------------ Zeichnen (und bei Größenänderung neu)
 zeichne.forEach(f => f());

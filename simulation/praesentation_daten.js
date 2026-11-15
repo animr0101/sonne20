@@ -2,6 +2,9 @@
 // nur zusammengefasste Werte (keine Viertelstunden-Profile einzelner Wohnungen).
 // Energiemengen hängen nicht von den Preisen ab – die Präsentation rechnet Preise daher selbst darauf.
 //
+// Wärmepumpe: Puffermodell (einstellungen.json → waerme.modell). Vergleiche immer mit dem Modelllauf „heute“.
+// Voraussetzung: python3 aufbereitung/waermemodell.py
+//
 // Aufruf:  node simulation/praesentation_daten.js     →  praesentation/daten.json
 'use strict';
 const fs = require('node:fs');
@@ -10,7 +13,13 @@ const K = require('./kern.js');
 
 const ROOT = path.join(__dirname, '..');
 const CFG = JSON.parse(fs.readFileSync(path.join(ROOT, 'einstellungen.json'), 'utf8'));
-const D = JSON.parse(fs.readFileSync(path.join(ROOT, 'simulation', 'daten', 'jahr_2025.json'), 'utf8'));
+const ladeJahr = j => JSON.parse(fs.readFileSync(path.join(ROOT, 'simulation', 'daten', `jahr_${j}.json`), 'utf8'));
+const D = ladeJahr(2025);
+if (!D.waermemodell) throw new Error('Wärmemodell fehlt – zuerst python3 aufbereitung/waermemodell.py');
+const ALLE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+// Heizpatronen-Einstellungen am Smartfox (alle umsetzbar)
+const HP = { heute: null, fenster: { aus_stunden: [11, 12, 13, 14] }, schwelle: { schwelle_kw: 3 }, reserve: { reserve_kw: 3 }, aus: { aus_monate: ALLE } };
+const ANH = { ab_kw: 3, plus_k: 8, max_c: 58, cop_minus_prozent_je_k: 2.5 };
 const T = K.TOPS;
 const r1 = x => Math.round(x * 10) / 10;
 
@@ -25,14 +34,15 @@ const NEU = [
   { name: 'Auto D', top: '6', profil: 'wenigfahrer', km_jahr: 6000, seed: 14 },
 ];
 
-function einstellung({ vt, hp, batt, autos, strat, top4, tf10 = null, bv = 'allgemein' }) {
+function einstellung({ vt, hp, batt = 0, autos = 0, strat = 'sofort', top4 = 'sofort', tf10 = null, bv = 'allgemein', anh = null }) {
   const s = K.ausKonfiguration(CFG);
   s.verteilung.modell = vt;
   if (tf10 !== null) s.verteilung.teilnahme['10'] = tf10;
-  s.reihenfolge = hp === 'hinter' ? ['tops', 'heizpatrone'] : ['heizpatrone', 'tops'];
-  if (batt > 0) {
+  if (HP[hp]) s.heizpatrone = HP[hp];
+  s.waerme.pv_anhebung = anh;
+  if (batt > 0) {   // AC-Batterie lädt nur, was nach Heizpatrone und Wohnungen übrig bleibt (so ist sie umsetzbar)
     s.batterie = K.batterie({ kapazitaet_kwh: batt, leistung_kw: leistung(batt), versorgt: bv });
-    s.reihenfolge = hp === 'hinter' ? K.REIHENFOLGEN.tops_batterie_heizpatrone : K.REIHENFOLGEN.nach_tops;
+    s.reihenfolge = K.REIHENFOLGEN.nach_tops;
   }
   s.eautos = [];
   if (top4 === 'pv') s.eautos.push({ ...TOP4, strategie: 'pv', anstecken_unter_prozent: null });
@@ -45,10 +55,10 @@ function einstellung({ vt, hp, batt, autos, strat, top4, tf10 = null, bv = 'allg
 function kennzahlen(r) {
   return {
     b: r1(r.summe.bezug_allg),
-    rest: Array.from({ length: 12 }, (_, m) => r1(r.monate[m + 1].rest)),
+    rest: Array.from({ length: 12 }, (_, m) => r1(r.monate[m + 1] ? r.monate[m + 1].rest : 0)),
     v: T.map(t => r1(r.tops[t].verbrauch)), vs: T.map(t => r1(r.tops[t].verbrauch_snap)),
     e: T.map(t => r1(r.tops[t].genutzt)), es: T.map(t => r1(r.tops[t].genutzt_snap)),
-    hp: r1(r.waerme.heizpatrone), wpn: r1(r.waerme.wp_nachheizen),
+    hp: r1(r.waerme.heizpatrone), wp: r1(r.waerme.wp_modell ?? 0), starts: r.waerme.starts ?? null,
     bat: r.batterie ? { ent: r1(r.batterie.entladung), zyk: Math.round(r.batterie.vollzyklen), tops: r1(r.summe.entladung_tops) } : null,
     ev: r.eautos.map(a => ({ n: a.name, top: a.top, p: a.profil, gel: r1(a.geladen), pv: r1(a.aus_pv), km: Math.round(a.km) })),
     spitze: r1(r.eauto_spitze_kw),
@@ -59,7 +69,7 @@ function kennzahlen(r) {
 function raster() {
   const out = {};
   let n = 0;
-  for (const vt of ['statisch', 'dynamisch']) for (const hp of ['vor', 'hinter']) for (const batt of BATT)
+  for (const vt of ['statisch', 'dynamisch']) for (const hp of ['heute', 'reserve', 'aus']) for (const batt of BATT)
     for (const top4 of ['sofort', 'pv']) for (let autos = 0; autos <= NEU.length; autos++)
       for (const strat of autos === 0 ? ['sofort'] : ['sofort', 'pv'])
         for (const bv of batt === 0 ? ['allgemein'] : ['allgemein', 'allgemein_und_tops']) {
@@ -117,7 +127,32 @@ function pruefstempel() {
 function main() {
   const heute = K.simuliere(D, K.ausKonfiguration(CFG));
   const pv = summe(D.pv), hp = summe(D.heizpatrone), allgPV = summe(D.verbrauch_allg) - summe(D.bezug_allg);
-  const tf = [17, 50, 100].map(x => kennzahlen(K.simuliere(D, einstellung({ vt: 'dynamisch', hp: 'hinter', batt: 0, autos: 0, strat: 'sofort', top4: 'sofort', tf10: x === 17 ? null : x }))));
+  const tf = [17, 50, 100].map(x => kennzahlen(K.simuliere(D, einstellung({ vt: 'dynamisch', hp: 'aus', tf10: x === 17 ? null : x }))));
+  // Heizpatronen-Varianten (ohne Batterie/Autos) für jedes Jahr – 2026 nur Jänner bis August
+  const VAR = { fix: { vt: 'statisch', hp: 'heute' }, fix_aus: { vt: 'statisch', hp: 'aus' }, dyn: { vt: 'dynamisch', hp: 'heute' },
+    fenster: { vt: 'dynamisch', hp: 'fenster' }, schwelle: { vt: 'dynamisch', hp: 'schwelle' }, reserve: { vt: 'dynamisch', hp: 'reserve' },
+    aus: { vt: 'dynamisch', hp: 'aus' }, aus_anh: { vt: 'dynamisch', hp: 'aus', anh: ANH }, reserve_anh: { vt: 'dynamisch', hp: 'reserve', anh: ANH },
+    aus_b10: { vt: 'dynamisch', hp: 'aus', batt: 10 } };
+  const jahre = {};
+  for (const j of [2024, 2025, 2026]) {
+    const DJ = j === 2025 ? D : ladeJahr(j);
+    const mess = k => Math.round(summe(DJ[k]));
+    jahre[j] = {
+      monate: new Set(K.zeitfelder(DJ.zeit).monat).size,
+      mess: { pv: mess('pv'), bezug: mess('bezug_allg'), rest: mess('rest'), hp: mess('heizpatrone'), wp: mess('wp'),
+        tops_genutzt: Math.round(summe(T.flatMap(t => DJ.e[t]))) },
+      var: Object.fromEntries(Object.entries(VAR).map(([n, o]) => [n, kennzahlen(K.simuliere(DJ, einstellung(o)))])),
+    };
+  }
+  // Wärmemodell: Prüfung gegen die Messung 2025 (Bericht simulation/ausgabe/waermemodell.md)
+  const tq = (a, q) => { const x = a.filter(v => v > 0).map(v => v / 10).sort((p, r) => p - r); return r1(x[Math.floor(q * (x.length - 1))]); };
+  const mH = K.simuliere(D, einstellung({ vt: 'statisch', hp: 'heute' }), { details: true });
+  const waerme = {
+    regelung: D.waermemodell.regelung, bilanz: D.waermemodell.bilanz,
+    mess_temp: [tq(D.temp, 0.05), tq(D.temp, 0.5), tq(D.temp, 0.95)],
+    modell_temp: [0.05, 0.5, 0.95].map(q => { const x = [...mH.details.temp].sort((p, r) => p - r); return r1(x[Math.floor(q * (x.length - 1))]); }),
+    modell_wp: r1(mH.waerme.wp_modell), mess_wp: r1(summe(D.wp)), modell_starts: mH.waerme.starts,
+  };
   const cfgK = K.ausKonfiguration(CFG);
   const daten = {
     erstellt: new Date().toISOString().slice(0, 10),
@@ -152,6 +187,7 @@ function main() {
     tage: { sommer: beispieltag(20250615), uebergang: beispieltag(20250320), winter: beispieltag(20250115) },
     pruef: pruefstempel(),
     top10: tf,
+    jahre, waerme,
     raster: raster(),
   };
   const ziel = path.join(ROOT, 'praesentation', 'daten.json');
