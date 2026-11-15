@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+aufbereitung/ausgabe/*.csv
+simulation/daten/*.json

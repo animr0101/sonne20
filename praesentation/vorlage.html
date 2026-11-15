@@ -1,0 +1,648 @@
+<title>Unser Sonnenstrom</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+/* Layout: eine durchgehende Präsentation in Kapiteln, Kapitelleiste oben, Rechner als Arbeitsfläche in der Mitte */
+:root {
+  --bg: #f7f8f9; --surface: #ffffff; --ink: #14202b; --ink-2: #4a5866; --ink-3: #6f7c88;
+  --line: #dde3e8; --line-2: #eef1f4; --accent: #1d5f8a; --accent-ink: #ffffff; --sun: #eda100;
+  --s-allg: #2a78d6; --s-hp: #eb6834; --s-tops: #1baf7a; --s-pv: #eda100; --s-rest: #a9b4bd;
+  --pos: #1d5f8a; --neg: #c2413f; --tip-bg: #14202b; --tip-ink: #f3f6f8;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-text: "Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12171c; --surface: #1a2128; --ink: #e8edf1; --ink-2: #b4c0ca; --ink-3: #8a97a3;
+  --line: #2c3640; --line-2: #222a32; --accent: #6fb0dc; --accent-ink: #0e1a24; --sun: #c98500;
+  --s-allg: #3987e5; --s-hp: #d95926; --s-tops: #199e70; --s-pv: #c98500; --s-rest: #56616b;
+  --pos: #6fb0dc; --neg: #e66767; --tip-bg: #e8edf1; --tip-ink: #14202b; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #12171c; --surface: #1a2128; --ink: #e8edf1; --ink-2: #b4c0ca; --ink-3: #8a97a3;
+  --line: #2c3640; --line-2: #222a32; --accent: #6fb0dc; --accent-ink: #0e1a24; --sun: #c98500;
+  --s-allg: #3987e5; --s-hp: #d95926; --s-tops: #199e70; --s-pv: #c98500; --s-rest: #56616b;
+  --pos: #6fb0dc; --neg: #e66767; --tip-bg: #e8edf1; --tip-ink: #14202b; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-text); font-size: 17px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); font-stretch: 112%; line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.6rem, 3.2vw, 2.3rem); font-weight: 750; }
+h3 { font-size: 1.15rem; font-weight: 700; font-stretch: 105%; }
+p { margin: 0; max-width: 68ch; }
+.muted { color: var(--ink-2); }
+.small { font-size: 0.88rem; color: var(--ink-3); }
+.num, td.n, .tile b { font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Kapitelleiste */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+nav.kapitel { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: var(--surface); border-bottom: 1px solid var(--line); }
+nav.kapitel .wrap { display: flex; gap: 4px; overflow-x: auto; padding-block: 8px; scrollbar-width: thin; }
+nav.kapitel a { white-space: nowrap; text-decoration: none; color: var(--ink-2); font-weight: 600; font-size: 0.92rem; padding: 6px 10px; border-radius: 999px; }
+nav.kapitel a:hover { background: var(--line-2); color: var(--ink); }
+nav.kapitel a.aktiv { background: var(--accent); color: var(--accent-ink); }
+
+header.kopf { padding-block: 56px 40px; }
+header.kopf .wrap { display: grid; gap: 18px; }
+.eyebrow { font-family: var(--f-display); font-stretch: 125%; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; font-weight: 700; color: var(--ink-3); }
+.sonnenband { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; margin-top: 8px; }
+.sonnenband span { display: block; }
+
+section.kap { padding-block: 56px; border-top: 1px solid var(--line); scroll-margin-top: 56px; }
+section.kap > .wrap { display: grid; gap: 24px; }
+.kap-kopf { display: grid; gap: 10px; }
+.kap-kopf .eyebrow { color: var(--accent); }
+
+.zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start; }
+.zwei > * { min-width: 0; }
+.karte { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; gap: 12px; min-width: 0; }
+.kernsatz { font-family: var(--f-display); font-stretch: 105%; font-size: 1.25rem; font-weight: 650; line-height: 1.3; max-width: 52ch; }
+.kernsatz em { font-style: normal; color: var(--accent); }
+
+/* Kennzahlen */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.tile span { font-size: 0.85rem; color: var(--ink-2); }
+.tile b { font-family: var(--f-display); font-stretch: 110%; font-size: 1.7rem; font-weight: 750; line-height: 1.15; }
+.tile small { font-size: 0.82rem; color: var(--ink-3); }
+.tile.haupt { border-color: var(--accent); }
+.tile.haupt b { color: var(--accent); }
+
+/* Fluss-Schema */
+.fluss { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(0, 3fr); gap: 16px; align-items: stretch; }
+.fluss .quelle { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; align-content: center; gap: 4px; border-left: 6px solid var(--s-pv); }
+.fluss .ziele { display: grid; gap: 8px; }
+.ziel { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+.ziel i { width: 14px; height: 14px; border-radius: 3px; display: block; }
+.ziel.unter { margin-left: 28px; }
+.ziel b { font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .fluss { grid-template-columns: 1fr; } .ziel.unter { margin-left: 14px; } }
+
+/* Diagramme */
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--ink-2); font-family: var(--f-text); font-size: 12px; }
+.chart .achse { stroke: var(--line); stroke-width: 1; }
+.chart .gitter { stroke: var(--line-2); stroke-width: 1; }
+.legende { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.88rem; color: var(--ink-2); }
+.legende span { display: inline-flex; align-items: center; gap: 6px; }
+.legende i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.legende i.linie { height: 3px; border-radius: 2px; width: 16px; }
+#tip { position: fixed; z-index: 50; pointer-events: none; background: var(--tip-bg); color: var(--tip-ink); padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; line-height: 1.35; max-width: 260px; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-variant-numeric: tabular-nums; }
+details.tabelle { font-size: 0.9rem; }
+details.tabelle summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.tab-scroll { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+th { font-weight: 600; color: var(--ink-2); font-size: 0.85rem; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+tr.summe td { font-weight: 700; border-top: 2px solid var(--line); }
+#anlage-liste td, #anlage-liste th, #tb-annahmen td, #pruef td, #tb-hk td:first-child { white-space: normal; }
+.rechner .tile b { font-size: 1.35rem; }
+
+/* Umschalter und Regler */
+.segment { display: inline-flex; background: var(--line-2); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.segment button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.segment button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.regler { display: grid; gap: 14px; }
+.regel { display: grid; gap: 6px; }
+.regel label, .regel .lbl { font-weight: 600; font-size: 0.92rem; display: flex; justify-content: space-between; gap: 12px; }
+.regel output { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.rechner { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.rechner .steuer { position: sticky; top: 64px; }
+@media (max-width: 860px) { .rechner { grid-template-columns: 1fr; } .rechner .steuer { position: static; } }
+.knopf { border: 1px solid var(--accent); background: transparent; color: var(--accent); font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 999px; cursor: pointer; justify-self: start; }
+.knopf:hover { background: var(--accent); color: var(--accent-ink); }
+.hinweis { border-left: 4px solid var(--sun); background: var(--surface); padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 0.95rem; }
+.empf { display: grid; gap: 12px; counter-reset: e; }
+.empf li { list-style: none; display: grid; grid-template-columns: 44px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.empf li::before { counter-increment: e; content: counter(e); font-family: var(--f-display); font-stretch: 125%; font-weight: 800; font-size: 1.6rem; color: var(--accent); }
+.empf ol { margin: 0; padding: 0; display: grid; gap: 12px; }
+.stempel { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; color: var(--pos); }
+.stempel::before { content: "✓"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--pos); color: var(--accent-ink); font-size: 0.8rem; }
+footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 0.88rem; }
+.nurdruck { display: none; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+@media print {
+  nav.kapitel, .steuer .regler, details.tabelle summary, #tip { display: none !important; }
+  .nurdruck { display: block; }
+  details.tabelle > .tab-scroll { display: block; }
+  section.kap { break-before: page; padding-block: 12px; border: 0; }
+  body { font-size: 12pt; background: #fff; }
+  .rechner { grid-template-columns: 1fr; }
+  .karte, .tile, .ziel, .empf li { break-inside: avoid; }
+}
+</style>
+
+<script id="daten" type="application/json">__DATEN__</script>
+
+<nav class="kapitel" aria-label="Kapitel"><div class="wrap" id="navliste"></div></nav>
+
+<header class="kopf"><div class="wrap">
+  <div class="eyebrow">Hausgemeinschaft · Photovoltaik · Auswertung 2025</div>
+  <h1>Unser Sonnenstrom</h1>
+  <p class="kernsatz" id="kopf-satz"></p>
+  <div>
+    <div class="sonnenband" id="kopf-band" role="img"></div>
+    <div class="legende" id="kopf-legende" style="margin-top:10px"></div>
+  </div>
+  <p class="small">Grundlage: Viertelstunden-Messwerte des Netzbetreibers (Allgemeinzähler, EDA-Verteilung) und des Smartfox, Jahr 2025. Preise brutto laut Rechnungen. Alle Zahlen sind gegen die Rechnungen geprüft (siehe Anhang).</p>
+</div></header>
+
+<section class="kap" id="anlage" data-nav="Anlage"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 1</div><h2>So fließt unser Sonnenstrom</h2>
+    <p class="muted">Die PV-Anlage hängt am Allgemeinzähler. Was dort gerade gebraucht wird, nimmt das Haus direkt. Den Rest teilt der Netzbetreiber jede Viertelstunde auf die zehn Wohnungen auf. Was keine Wohnung braucht, geht ins Netz.</p></div>
+  <div class="fluss" id="fluss"></div>
+  <div class="zwei">
+    <div class="karte"><h3>Die Anlage</h3><div id="anlage-liste"></div></div>
+    <div class="karte"><h3>Rückblick: Allgemeinstrom aus dem Netz</h3><div class="chart" id="ch-geschichte"></div>
+      <div class="legende" id="lg-geschichte"></div>
+      <p class="small">Aus den Jahresrechnungen. Die Einspeisung wird erst seit 2023 eigens abgerechnet; Ende 2023 wurde die Anlage erweitert.</p></div>
+  </div>
+</div></section>
+
+<section class="kap" id="ist" data-nav="2025"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 2</div><h2>Das Jahr 2025 im Überblick</h2></div>
+  <div class="tiles" id="ist-tiles"></div>
+  <div class="karte"><h3>Wohin geht der Sonnenstrom – Monat für Monat</h3>
+    <div class="legende" id="lg-monate"></div><div class="chart" id="ch-monate"></div>
+    <details class="tabelle"><summary>Tabelle anzeigen</summary><div class="tab-scroll" id="tb-monate"></div></details></div>
+  <div class="karte"><h3>Ein Tag im Haus</h3>
+    <div class="segment" role="group" aria-label="Beispieltag" id="tag-wahl"></div>
+    <div class="legende" id="lg-tag"></div><div class="chart" id="ch-tag"></div>
+    <p class="small" id="tag-text"></p></div>
+</div></section>
+
+<section class="kap" id="verteilung" data-nav="Verteilung"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 3</div><h2>Fixe oder dynamische Verteilung?</h2>
+    <p class="muted">Heute bekommt jede Wohnung einen festen Prozentsatz des Überschusses, auch wenn sie ihn gerade nicht braucht. Dynamisch wird nach dem tatsächlichen Verbrauch in jeder Viertelstunde verteilt.</p></div>
+  <div class="tiles" id="vt-tiles"></div>
+  <div class="zwei">
+    <div class="karte"><h3>Von den Wohnungen genutzter PV-Strom</h3><div class="chart" id="ch-vt"></div>
+      <div class="legende" id="lg-vt"></div></div>
+    <div class="karte"><h3>Sonderfall Top 10</h3>
+      <p>Top 10 ist zusätzlich in einer zweiten Energiegemeinschaft und nimmt bei uns nur mit <b>17 %</b> seines Verbrauchs teil. Gleichzeitig hat es den größten Anteil am Überschuss. Ein höherer Teilnahmefaktor würde allen helfen, liegt aber nicht in unserer Hand.</p>
+      <div class="tab-scroll" id="tb-top10"></div></div>
+  </div>
+</div></section>
+
+<section class="kap" id="heizpatrone" data-nav="Heizpatrone"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 4</div><h2>Die Heizpatrone bekommt mehr PV-Strom als alle Wohnungen</h2>
+    <p class="muted">Der Smartfox schickt Überschuss zuerst in die Heizpatrone im Pufferspeicher – erst danach wird an die Wohnungen verteilt. Eine kWh in der Heizpatrone ist aber wenig wert: Die Wärmepumpe macht aus derselben kWh rund 3,5 kWh Wärme.</p></div>
+  <div class="zwei">
+    <div class="karte"><h3>Was ist eine kWh Sonnenstrom wert?</h3><div class="chart" id="ch-wert"></div>
+      <p class="small">Wohnung: vermiedener Netzbezug. Einspeisung: Vergütung 2025. Heizpatrone: eingesparter Wärmepumpenstrom (Allgemeintarif ÷ COP 3,5, im Winter bei ~60 % Ersatz).</p></div>
+    <div class="karte"><h3>Heizpatrone hinter die Wohnungen stellen</h3><div class="tiles" id="hp-tiles"></div>
+      <p>Eine Einstellung am Smartfox, keine Investition. Die Wärmepumpe muss dafür etwas nachheizen – das ist in den Zahlen schon abgezogen. Auch wenn jede kWh der Heizpatrone durch die Wärmepumpe ersetzt werden müsste, bleibt der Vorteil deutlich.</p></div>
+  </div>
+</div></section>
+
+<section class="kap" id="rechner" data-nav="Rechner"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 5</div><h2>Rechner: Was bringt welche Maßnahme?</h2>
+    <p class="muted">Alle Kombinationen sind mit den Messwerten 2025 vorgerechnet. Vergleich jeweils mit heute (fixe Verteilung, Heizpatrone zuerst, keine Batterie, Wohnungen zahlen nichts für PV-Strom).</p></div>
+  <div class="rechner">
+    <div class="karte steuer">
+      <div class="regler" id="regler"></div>
+      <div class="nurdruck small" id="druck-einst"></div>
+    </div>
+    <div style="display:grid;gap:20px;min-width:0">
+      <div class="tiles" id="r-tiles"></div>
+      <div class="karte"><h3>Änderung pro Wohnung und Jahr</h3>
+        <p class="small">Eigene Stromrechnung + Zahlung an die Hauskasse + Anteil am Ergebnis der Hauskasse (nach 1.107 Anteilen).</p>
+        <div class="chart" id="ch-tops"></div>
+        <details class="tabelle"><summary>Tabelle anzeigen</summary><div class="tab-scroll" id="tb-tops"></div></details></div>
+      <div class="zwei">
+        <div class="karte"><h3>Hauskasse pro Jahr</h3><div class="tab-scroll" id="tb-hk"></div></div>
+        <div class="karte" id="k-extra"></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="kap" id="batterie" data-nav="Batterie"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 6</div><h2>Lohnt sich ein Batteriespeicher?</h2>
+    <p class="muted">Ein Speicher am Allgemeinzähler versorgt abends und nachts vor allem die Wärmepumpe. Ob er sich lohnt, entscheidet der Preis: Die Grafik zeigt, bis zu welchem Preis pro kWh Speicher er sich über 15 Jahre bezahlt macht.</p></div>
+  <div class="zwei">
+    <div class="karte"><h3>Bis zu diesem Preis lohnt sich die Batterie</h3><div class="chart" id="ch-batt"></div>
+      <p class="small" id="batt-text"></p></div>
+    <div class="karte"><h3>Wichtig: Wovon die Batterie lädt</h3>
+      <p>Lädt die Batterie nur aus dem Strom, der sonst ins Netz ginge, steht sie im Winter fast leer – dann nimmt die Heizpatrone alles. Lädt sie <b>vor</b> der Heizpatrone (nach den Wohnungen), bekommt sie das ganze Jahr Strom.</p>
+      <div class="tab-scroll" id="tb-batt"></div>
+      <p class="small">Wechselrichter SolarEdge SE25K ist kein Hybrid-Wechselrichter: Die Batterie braucht einen eigenen Batteriewechselrichter (im Preis pro kWh enthalten zu denken).</p></div>
+  </div>
+</div></section>
+
+<section class="kap" id="eautos" data-nav="E-Autos"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 7</div><h2>E-Autos mit Sonnenstrom laden</h2>
+    <p class="muted">An den Stellplätzen kann mit bis zu 11 kW geladen werden. Mit PV-Überschussladen lädt das Auto über einem Mindest-Ladestand von 30 % nur mit Strom, den die Wohnungen gerade nicht brauchen. Das Modell ist am echten E-Auto von Top 4 geeicht.</p></div>
+  <div class="zwei">
+    <div class="karte"><h3>Anteil Sonnenstrom am Ladestrom</h3><div class="chart" id="ch-ev"></div>
+      <div class="legende" id="lg-ev"></div></div>
+    <div class="karte"><h3>Was man wissen muss</h3>
+      <ul style="margin:0;padding-left:20px;display:grid;gap:8px">
+        <li><b>Nur mit dynamischer Verteilung</b> kommt der Überschuss beim Auto an – bei fixer Verteilung bekommt eine Wohnung bei voller Sonne nur ~2 kW.</li>
+        <li>Am meisten profitieren Autos, die tagsüber zu Hause stehen (Homeoffice, Wenigfahrer).</li>
+        <li>Eine Wallbox mit Phasenumschaltung bringt kaum mehr.</li>
+        <li><b>Anschlussleistung klären:</b> Die Wohnungen haben 6 kW Netzbereitstellung, eine 11-kW-Wallbox liegt darüber.</li>
+        <li>E-Autos ersetzen die Batterie kaum: Sie nehmen den Sommerüberschuss mittags, die Batterie versorgt nachts die Wärmepumpe.</li>
+      </ul></div>
+  </div>
+</div></section>
+
+<section class="kap" id="empfehlung" data-nav="Empfehlung"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Kapitel 8</div><h2>Empfehlung</h2></div>
+  <div class="empf"><ol id="empf-liste"></ol></div>
+</div></section>
+
+<section class="kap" id="anhang" data-nav="Anhang"><div class="wrap">
+  <div class="kap-kopf"><div class="eyebrow">Anhang</div><h2>Annahmen, Prüfungen, offene Fragen</h2></div>
+  <div class="zwei">
+    <div class="karte"><h3>Geprüft</h3><div id="pruef"></div></div>
+    <div class="karte"><h3>Annahmen</h3><div class="tab-scroll" id="tb-annahmen"></div></div>
+  </div>
+  <div class="karte"><h3>Offene Fragen</h3>
+    <ul style="margin:0;padding-left:20px;display:grid;gap:6px">
+      <li>Netzbetreiber: Wird die Einspeisevergütung auf die gesamte Einspeisung gezahlt (2025: 16.327 kWh) oder nur auf den Restüberschuss (13.330 kWh)? Die Simulation rechnet regulär mit dem Restüberschuss.</li>
+      <li>Netzbetreiber: Wie genau funktioniert die dynamische Verteilung, ab wann ist eine Umstellung möglich?</li>
+      <li>Netzbetreiber: Der fixe Schlüssel weicht leicht von den 1.107 Anteilen ab (Top 10: 16,88 % statt 16,26 %).</li>
+      <li>Darf Strom aus einer Batterie in der Gemeinschaftsanlage an die Wohnungen verteilt werden?</li>
+      <li>Hausverwaltung: Umsatzsteuer auf einen internen PV-Preis? Vorsteuerabzug der Gemeinschaft? (Gerechnet: alles brutto.)</li>
+      <li>Elektriker: Reicht der Hausanschluss für mehrere Wallboxen gleichzeitig?</li>
+      <li>Warmwasser: Mindesttemperatur und Legionellen-Schaltung (55 / 60 °C).</li>
+    </ul></div>
+</div></section>
+
+<footer><div class="wrap" id="fuss"></div></footer>
+<div id="tip" hidden></div>
+
+<script>
+(() => {
+'use strict';
+const D = JSON.parse(document.getElementById('daten').textContent);
+const T = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const $ = id => document.getElementById(id);
+const de = (x, nk = 0) => { const r = Math.round(x * 10 ** nk) / 10 ** nk; return (Object.is(r, -0) ? 0 : r).toLocaleString('de-DE', { minimumFractionDigits: nk, maximumFractionDigits: nk }); };
+const vz = (x, nk = 0) => (Math.round(x * 10 ** nk) > 0 ? '+' : Math.round(x * 10 ** nk) < 0 ? '−' : '') + de(Math.abs(x), nk);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const FARBE = { allg: 'var(--s-allg)', hp: 'var(--s-hp)', tops: 'var(--s-tops)', pv: 'var(--s-pv)', rest: 'var(--s-rest)' };
+const MON = ['Jän', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const legende = (el, items) => { $(el).innerHTML = items.map(([n, f, linie]) => `<span><i class="${linie ? 'linie' : ''}" style="background:${f}"></i>${esc(n)}</span>`).join(''); };
+const tabelle = (kopf, zeilen, summe) => `<table><thead><tr>${kopf.map((k, i) => `<th class="${i ? 'n' : ''}">${k}</th>`).join('')}</tr></thead><tbody>${zeilen.map(z => `<tr>${z.map((c, i) => `<td class="${i ? 'n' : ''}">${c}</td>`).join('')}</tr>`).join('')}${summe ? `<tr class="summe">${summe.map((c, i) => `<td class="${i ? 'n' : ''}">${c}</td>`).join('')}</tr>` : ''}</tbody></table>`;
+
+// ------------------------------------------------------------ Tooltip
+const tip = $('tip');
+document.addEventListener('pointermove', ev => {
+  const z = ev.target.closest && ev.target.closest('[data-tip]');
+  if (!z) { tip.hidden = true; return; }
+  tip.innerHTML = z.getAttribute('data-tip'); tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(innerWidth - w - 8, ev.clientX + 14) + 'px';
+  tip.style.top = Math.max(8, ev.clientY - h - 12) + 'px';
+});
+document.addEventListener('pointerleave', () => { tip.hidden = true; });
+
+// ------------------------------------------------------------ Diagramm-Bausteine
+const breite = el => Math.max(280, Math.round($(el).clientWidth || 720));
+function skala(max) {   // runde Teilstriche
+  const roh = max / 4, p = 10 ** Math.floor(Math.log10(roh || 1)), s = [1, 2, 2.5, 5, 10].map(x => x * p).find(x => x >= roh);
+  return { schritt: s, max: Math.ceil(max / s) * s };
+}
+const rundpfad = (x, y, w, h, r) => { r = Math.min(r, w / 2, Math.abs(h)); return h <= 0 ? '' : `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`; };
+
+/** gestapelte Säulen: kat = Beschriftungen, reihen = [{name, farbe, werte}] */
+function saeulen(el, kat, reihen, { einheit = 'kWh', hoehe = 260 } = {}) {
+  const W = breite(el), H = hoehe, L = 52, R = 8, O = 10, U = 26;
+  const summen = kat.map((_, i) => reihen.reduce((a, r) => a + r.werte[i], 0));
+  const sk = skala(Math.max(...summen) * 1.05), y = v => O + (H - O - U) * (1 - v / sk.max);
+  const band = (W - L - R) / kat.length, bw = Math.min(28, band * 0.6);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(reihen.map(r => r.name).join(', '))}">`;
+  for (let v = 0; v <= sk.max + 1e-9; v += sk.schritt) s += `<line class="gitter" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${de(v)}</text>`;
+  kat.forEach((k, i) => {
+    const x = L + band * i + (band - bw) / 2; let basis = 0;
+    const tipText = `<b>${esc(k)}</b><br>` + reihen.map(r => `${esc(r.name)}: ${de(r.werte[i])} ${einheit}`).join('<br>');
+    reihen.forEach((r, j) => {
+      const v = r.werte[i]; if (v <= 0) return;
+      const y0 = y(basis), y1 = y(basis + v), oben = j === reihen.length - 1 || reihen.slice(j + 1).every(q => q.werte[i] <= 0);
+      const hh = y0 - y1 - (basis > 0 ? 2 : 0);
+      if (hh > 0) s += oben ? `<path d="${rundpfad(x, y1, bw, hh, 4)}" fill="${r.farbe}"/>` : `<rect x="${x}" y="${y1}" width="${bw}" height="${hh}" fill="${r.farbe}"/>`;
+      basis += v;
+    });
+    s += `<rect x="${L + band * i}" y="${O}" width="${band}" height="${H - O - U}" fill="transparent" data-tip="${esc(tipText)}"/>`;
+    s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${esc(k)}</text>`;
+  });
+  s += `<line class="achse" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/></svg>`;
+  $(el).innerHTML = s;
+}
+
+/** waagrechte Balken (eine Reihe) mit Werten am Ende; Werte dürfen negativ sein */
+function balken(el, zeilen, { einheit = '€', farbe = 'var(--pos)', farbeNeg = 'var(--neg)', nk = 0, linie = null, linieText = '' } = {}) {
+  const W = breite(el), zh = 30, O = 6, L = Math.min(130, W * 0.32), R = Math.min(96, W * 0.24), H = O * 2 + zh * zeilen.length + (linie !== null ? 18 : 0);
+  const werte = zeilen.map(z => z.wert), mn = Math.min(0, ...werte, linie ?? 0), mx = Math.max(0, ...werte, linie ?? 0);
+  const x = v => L + (W - L - R) * (v - mn) / ((mx - mn) || 1);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  zeilen.forEach((z, i) => {
+    const y = O + i * zh + 6, h = zh - 12, x0 = x(0), x1 = x(z.wert), w = Math.abs(x1 - x0);
+    s += `<text x="${L - 10}" y="${y + h / 2 + 4}" text-anchor="end">${esc(z.name)}</text>`;
+    if (w > 0.5) {
+      const xa = Math.min(x0, x1), r = Math.min(4, w / 2);
+      const d = z.wert >= 0 ? `M${xa},${y}H${xa + w - r}Q${xa + w},${y} ${xa + w},${y + r}V${y + h - r}Q${xa + w},${y + h} ${xa + w - r},${y + h}H${xa}Z`
+        : `M${xa + w},${y}H${xa + r}Q${xa},${y} ${xa},${y + r}V${y + h - r}Q${xa},${y + h} ${xa + r},${y + h}H${xa + w}Z`;
+      s += `<path d="${d}" fill="${z.wert >= 0 ? (z.farbe || farbe) : farbeNeg}"/>`;
+    }
+    const tx = z.wert >= 0 ? x1 + 6 : x1 - 6;
+    s += `<text x="${tx}" y="${y + h / 2 + 4}" text-anchor="${z.wert >= 0 ? 'start' : 'end'}" style="fill:var(--ink);font-weight:600">${z.text ?? (vz(z.wert, nk) + ' ' + einheit)}</text>`;
+    s += `<rect x="0" y="${O + i * zh}" width="${W}" height="${zh}" fill="transparent" data-tip="${esc(z.tip || `<b>${z.name}</b><br>${vz(z.wert, nk)} ${einheit}`)}"/>`;
+  });
+  s += `<line class="achse" x1="${x(0)}" x2="${x(0)}" y1="${O}" y2="${O + zh * zeilen.length}"/>`;
+  if (linie !== null) s += `<line x1="${x(linie)}" x2="${x(linie)}" y1="${O}" y2="${O + zh * zeilen.length + 4}" stroke="var(--ink)" stroke-width="2"/><text x="${x(linie)}" y="${H - 2}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${esc(linieText)}</text>`;
+  $(el).innerHTML = s + '</svg>';
+}
+
+/** Tagesverlauf: Linien je Reihe, PV als Fläche, Fadenkreuz */
+function linien(el, zeit, reihen, { einheit = 'kW' } = {}) {
+  const W = breite(el), H = 280, L = 44, R = 10, O = 10, U = 26, n = zeit.length;
+  const sk = skala(Math.max(...reihen.flatMap(r => r.werte)) * 1.05);
+  const xs = i => L + (W - L - R) * i / (n - 1), ys = v => O + (H - O - U) * (1 - v / sk.max);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img">`;
+  for (let v = 0; v <= sk.max + 1e-9; v += sk.schritt) s += `<line class="gitter" x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${L - 6}" y="${ys(v) + 4}" text-anchor="end">${de(v)}</text>`;
+  for (let h = 0; h <= 24; h += (W < 500 ? 6 : 3)) { const i = Math.min(n - 1, h * 4); s += `<text x="${xs(i)}" y="${H - 8}" text-anchor="${h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}">${h} Uhr</text>`; }
+  reihen.forEach(r => {
+    const pts = r.werte.map((v, i) => `${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+    if (r.flaeche) s += `<polygon points="${xs(0)},${ys(0)} ${pts} ${xs(n - 1)},${ys(0)}" fill="${r.farbe}" opacity="0.14"/>`;
+    s += `<polyline points="${pts}" fill="none" stroke="${r.farbe}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  s += `<line class="achse" x1="${L}" x2="${W - R}" y1="${ys(0)}" y2="${ys(0)}"/><line id="${el}-kreuz" x1="0" x2="0" y1="${O}" y2="${H - U}" stroke="var(--ink-3)" stroke-width="1" visibility="hidden"/>`;
+  const sp = (W - L - R) / (n - 1);
+  zeit.forEach((z, i) => {
+    const t = `<b>${String(Math.floor(z / 100)).padStart(2, '0')}:${String(z % 100).padStart(2, '0')} Uhr</b><br>` + reihen.map(r => `${esc(r.name)}: ${de(r.werte[i], 1)} ${einheit}`).join('<br>');
+    s += `<rect x="${xs(i) - sp / 2}" y="${O}" width="${sp}" height="${H - O - U}" fill="transparent" data-tip="${esc(t)}" data-x="${xs(i)}"/>`;
+  });
+  $(el).innerHTML = s + '</svg>';
+  const kreuz = $(el + '-kreuz');
+  $(el).querySelector('svg').addEventListener('pointermove', ev => { const x = ev.target.getAttribute && ev.target.getAttribute('data-x'); if (x) { kreuz.setAttribute('x1', x); kreuz.setAttribute('x2', x); kreuz.setAttribute('visibility', 'visible'); } });
+  $(el).querySelector('svg').addEventListener('pointerleave', () => kreuz.setAttribute('visibility', 'hidden'));
+}
+
+// ------------------------------------------------------------ Rechenmodell (Preise auf vorgerechnete Energiemengen)
+const P0 = D.preise;
+const W = D.wirtschaft;
+const anteile = D.anteile, summeAnteile = anteile.reduce((a, b) => a + b, 0);
+const annuitaet = inv => { const z = W.zins / 100; return inv * z / (1 - (1 + z) ** -W.lebensdauer); };
+const barwertFaktor = (() => { let f = 0; for (let j = 1; j <= W.lebensdauer; j++) f += (1.02 * 0.98) ** (j - 1) / (1 + W.zins / 100) ** j; return f; })();
+const schluessel = (vt, hp, batt, top4, autos, strat) => [vt, hp, batt, top4, autos, autos === 0 ? 'sofort' : strat].join('|');
+function preise(st) {
+  return { pA: P0.allgemein_ct / 100 * st.fP / 100, pT: P0.top_ct / 100 * st.fP / 100, pS: P0.top_snap_ct / 100 * st.fP / 100,
+    einsp: P0.einspeisung_ct.map(c => c / 100 * st.fE / 100), pI: st.pI / 100 };
+}
+/** Geld eines vorgerechneten Szenarios k bei Preisen p und Batterie-Investition */
+function geld(k, p, invest = 0) {
+  const einsp = k.rest.reduce((a, r, m) => a + r * p.einsp[m], 0);
+  const allg = k.b * p.pA;
+  let tops = 0; const ersp = [];
+  T.forEach((_, i) => {
+    tops += (k.v[i] - k.vs[i] - (k.e[i] - k.es[i])) * p.pT + (k.vs[i] - k.es[i]) * p.pS;
+    ersp.push((k.e[i] - k.es[i]) * p.pT + k.es[i] * p.pS);
+  });
+  const rate = invest ? annuitaet(invest) : 0;
+  const sumE = k.e.reduce((a, b) => a + b, 0);
+  const hk = p.pI * sumE + einsp - allg - rate;
+  const netto = T.map((_, i) => ersp[i] - k.e[i] * p.pI + anteile[i] / summeAnteile * hk);
+  return { einsp, allg, tops, rate, haus: allg + tops - einsp + rate, hk, netto, sumE, intern: p.pI * sumE };
+}
+
+// ------------------------------------------------------------ Kapitel 1: Fluss, Anlage, Geschichte
+const I = D.ist;
+const pct = (a, b) => de(a / b * 100) + ' %';
+$('kopf-satz').innerHTML = `Unsere Anlage hat 2025 <em>${de(I.pv)} kWh</em> Sonnenstrom erzeugt. Die zehn Wohnungen konnten davon nur <em>${pct(I.tops_genutzt, I.pv)}</em> nutzen – ${pct(I.rest, I.pv)} gingen ins Netz.`;
+const verw = [['Allgemeinstrom direkt (Wärmepumpe, Lift, Licht …)', I.allg_direkt, FARBE.allg], ['Heizpatrone im Pufferspeicher', I.heizpatrone, FARBE.hp],
+  ['von den Wohnungen genutzt', I.tops_genutzt, FARBE.tops], ['ins Netz eingespeist', I.rest, FARBE.rest]];
+$('kopf-band').innerHTML = verw.map(([n, v, f]) => `<span style="flex:${v};background:${f}" data-tip="${esc(`<b>${n}</b><br>${de(v)} kWh (${pct(v, I.pv)})`)}"></span>`).join('');
+$('kopf-band').setAttribute('aria-label', verw.map(([n, v]) => `${n}: ${pct(v, I.pv)}`).join(', '));
+legende('kopf-legende', verw.map(([n, v, f]) => [`${n.split(' (')[0]} ${pct(v, I.pv)}`, f]));
+
+$('fluss').innerHTML = `<div class="quelle"><span class="small">PV-Erzeugung 2025</span><b style="font-family:var(--f-display);font-size:2rem;font-stretch:110%">${de(I.pv)} kWh</b><span class="small">SolarEdge, gemessen vom Smartfox</span></div>
+<div class="ziele">
+  <div class="ziel"><i style="background:${FARBE.allg}"></i><span>1. direkt im Allgemeinstrom (Wärmepumpe, Grundlast)</span><b>${de(I.allg_direkt)} kWh</b></div>
+  <div class="ziel"><i style="background:${FARBE.hp}"></i><span>2. Heizpatrone im Puffer</span><b>${de(I.heizpatrone)} kWh</b></div>
+  <div class="ziel"><i style="background:var(--line)"></i><span>3. Überschuss am Allgemeinzähler → Verteilung an die Wohnungen</span><b>${de(I.einspeisung)} kWh</b></div>
+  <div class="ziel unter"><i style="background:${FARBE.tops}"></i><span>von den Wohnungen genutzt</span><b>${de(I.tops_genutzt)} kWh</b></div>
+  <div class="ziel unter"><i style="background:${FARBE.rest}"></i><span>Restüberschuss ins Netz</span><b>${de(I.rest)} kWh</b></div>
+</div>`;
+$('anlage-liste').innerHTML = tabelle(['Teil', ''], [['Wechselrichter', D.anlage.wechselrichter], ['Wärmepumpe', D.anlage.waermepumpe], ['Pufferspeicher', D.anlage.puffer],
+  ['Heizpatrone', D.anlage.heizpatrone], ['Wohnungen', '10 (Top 1–10), 1.107 Anteile'], ['Netzbereitstellung', 'Allgemein 25 kW, Wohnung 6 kW']]).replace(/class="n"/g, '');
+const zeichne = [];
+zeichne.push(() => saeulen('ch-geschichte', D.geschichte.map(g => String(g.jahr)), [{ name: 'Allgemeinstrom aus dem Netz', farbe: FARBE.allg, werte: D.geschichte.map(g => g.bezug) }], { hoehe: 220 }));
+legende('lg-geschichte', [['Allgemeinstrom aus dem Netz (kWh/Jahr)', FARBE.allg]]);
+
+// ------------------------------------------------------------ Kapitel 2: Ist-Zustand
+$('ist-tiles').innerHTML = [
+  ['PV-Erzeugung', `${de(I.pv)} kWh`, ''],
+  ['Wärmepumpe (Strom)', `${de(I.wp)} kWh`, `${pct(I.wp, I.allg_verbrauch)} des Allgemeinstroms`],
+  ['Wohnungen: Verbrauch', `${de(I.tops_verbrauch)} kWh`, `davon ${pct(I.tops_genutzt, I.tops_verbrauch)} aus PV`],
+  ['Restüberschuss ins Netz', `${de(I.rest)} kWh`, `${pct(I.rest, I.pv)} der Erzeugung`, true],
+].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+const M = D.monate;
+const mReihen = [
+  { name: 'Allgemeinstrom direkt', farbe: FARBE.allg, werte: M.map(m => Math.max(0, m.pv - m.hp - m.ein)) },
+  { name: 'Heizpatrone', farbe: FARBE.hp, werte: M.map(m => m.hp) },
+  { name: 'Wohnungen', farbe: FARBE.tops, werte: M.map(m => m.gen) },
+  { name: 'ins Netz', farbe: FARBE.rest, werte: M.map(m => m.rest) },
+];
+zeichne.push(() => saeulen('ch-monate', MON, mReihen));
+legende('lg-monate', mReihen.map(r => [r.name, r.farbe]));
+$('tb-monate').innerHTML = tabelle(['Monat', 'PV', 'Allgemein direkt', 'Heizpatrone', 'Wohnungen', 'ins Netz', 'Wärmepumpe', 'Netzbezug Allgemein'],
+  M.map((m, i) => [MON[i], de(m.pv), de(mReihen[0].werte[i]), de(m.hp), de(m.gen), de(m.rest), de(m.wp), de(m.bez)]));
+
+const TAGE = { sommer: ['Sommertag', '15. Juni 2025: Viel Sonne. Die Heizpatrone nimmt am Vormittag den Überschuss, mittags geht das meiste ins Netz.'],
+  uebergang: ['Frühlingstag', '20. März 2025: Die Wärmepumpe läuft noch oft, auch mit PV-Strom. Die Heizpatrone nimmt einen großen Teil des Überschusses.'],
+  winter: ['Wintertag', '15. Jänner 2025: Kaum Sonne. Die Wärmepumpe läuft in Takten mit bis zu 11 kW, fast alles kommt aus dem Netz.'] };
+let tagWahl = 'sommer';
+function zeigeTag() {
+  const t = D.tage[tagWahl];
+  const r = [{ name: 'PV-Erzeugung', farbe: FARBE.pv, werte: t.pv, flaeche: true }, { name: 'Allgemeinstrom (Wärmepumpe + Grundlast)', farbe: FARBE.allg, werte: t.allg },
+    { name: 'Heizpatrone', farbe: FARBE.hp, werte: t.hp }, { name: 'Wohnungen gesamt', farbe: FARBE.tops, werte: t.tops }];
+  linien('ch-tag', t.zeit, r);
+  legende('lg-tag', r.map(x => [x.name + ' (kW)', x.farbe, true]));
+  $('tag-text').textContent = TAGE[tagWahl][1];
+  [...$('tag-wahl').children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.w === tagWahl)));
+}
+$('tag-wahl').innerHTML = Object.entries(TAGE).map(([k, [n]]) => `<button type="button" data-w="${k}">${n}</button>`).join('');
+$('tag-wahl').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { tagWahl = b.dataset.w; zeigeTag(); } });
+zeichne.push(zeigeTag);
+
+// ------------------------------------------------------------ Kapitel 3/4: Verteilung, Heizpatrone (Standardpreise)
+const stdP = preise({ fP: 100, fE: 100, pI: 0 });
+const R = D.raster;
+const heute = R[schluessel('statisch', 'vor', 0, 'sofort', 0)];
+const gHeute = geld(heute, stdP);
+const kDyn = R[schluessel('dynamisch', 'vor', 0, 'sofort', 0)], kB = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 0)];
+const vorteil = (k, inv = 0) => gHeute.haus - geld(k, stdP, inv).haus;
+$('vt-tiles').innerHTML = [
+  ['Heute (fix)', `${de(heute.gen)} kWh`, 'von den Wohnungen genutzt'],
+  ['Dynamisch', `${de(kDyn.gen)} kWh`, `${vz((kDyn.gen / heute.gen - 1) * 100)} % mehr`, true],
+  ['Vorteil fürs Haus', `${vz(vorteil(kDyn))} €`, 'pro Jahr, ohne Investition'],
+].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+zeichne.push(() => balken('ch-vt', T.map((t, i) => ({ name: `Top ${t}`, wert: kDyn.e[i] - heute.e[i], tip: `<b>Top ${t}</b><br>fix: ${de(heute.e[i])} kWh<br>dynamisch: ${de(kDyn.e[i])} kWh` })), { einheit: 'kWh' }));
+legende('lg-vt', [['Mehr genutzter PV-Strom pro Jahr mit dynamischer Verteilung', 'var(--pos)']]);
+$('tb-top10').innerHTML = tabelle(['Top 10 nimmt teil mit', 'von Wohnungen genutzt', 'Vorteil Haus/Jahr'],
+  [['17 % (heute)', 0], ['50 %', 1], ['100 %', 2]].map(([l, i]) => [l, de(D.top10[i].gen) + ' kWh', vz(vorteil(D.top10[i])) + ' €']));
+$('tb-top10').insertAdjacentHTML('beforeend', '<p class="small" style="margin-top:6px">Jeweils mit dynamischer Verteilung und Heizpatrone hinter den Wohnungen.</p>');
+
+const wertHP = P0.allgemein_ct / 3.5 * 0.6, eAvg = P0.einspeisung_ct.reduce((a, b) => a + b, 0) / 12;
+zeichne.push(() => balken('ch-wert', [{ name: 'an eine Wohnung', wert: P0.top_ct, farbe: FARBE.tops }, { name: 'eingespeist (Ø)', wert: eAvg, farbe: FARBE.rest },
+  { name: 'Heizpatrone (Winter)', wert: wertHP, farbe: FARBE.hp }], { einheit: 'ct', nk: 1 }));
+$('hp-tiles').innerHTML = [
+  ['Heizpatrone bekommt', `${de(kDyn.hp - kB.hp)} kWh`, 'weniger PV-Strom pro Jahr'],
+  ['Wohnungen nutzen', `${de(kB.gen - kDyn.gen)} kWh`, 'mehr PV-Strom pro Jahr'],
+  ['Wärmepumpe heizt nach', `${de(kB.wpn)} kWh`, 'Strom, teils aus PV'],
+  ['Vorteil fürs Haus', `${vz(vorteil(kB) - vorteil(kDyn))} €`, 'pro Jahr, zusätzlich zu dynamisch', true],
+].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+
+// ------------------------------------------------------------ Kapitel 5: Rechner
+const st = { vt: 'dynamisch', hp: 'hinter', batt: 0, bPreis: W.batterie_preis, autos: 0, strat: 'pv', top4: 'sofort', pI: 13, fP: 100, fE: 100 };
+const SEG = [
+  ['vt', 'Verteilung', [['statisch', 'fix (heute)'], ['dynamisch', 'dynamisch']]],
+  ['hp', 'Heizpatrone', [['vor', 'vor den Wohnungen (heute)'], ['hinter', 'hinter den Wohnungen']]],
+  ['top4', 'E-Auto Top 4 lädt', [['sofort', 'sofort (heute)'], ['pv', 'mit PV-Überschuss']]],
+  ['strat', 'Weitere E-Autos laden', [['sofort', 'sofort'], ['pv', 'mit PV-Überschuss']]],
+];
+const RANGE = [
+  ['batt', 'Batterie', 0, 5, 1, v => v ? `${[0, 5, 10, 15, 20, 30][v]} kWh` : 'keine', v => [0, 5, 10, 15, 20, 30][v], v => [0, 5, 10, 15, 20, 30].indexOf(v)],
+  ['bPreis', 'Batteriepreis (brutto, inkl. Montage)', 300, 1200, 25, v => `${de(v)} €/kWh`],
+  ['autos', 'Weitere E-Autos im Haus', 0, 4, 1, v => v ? `${v}` : 'keine'],
+  ['pI', 'Interner PV-Preis (Wohnung zahlt an Hauskasse)', 0, 25, 0.5, v => `${de(v, 1)} ct/kWh`],
+  ['fP', 'Strompreis Netzbezug', 60, 150, 5, v => `${v} % von 2025`],
+  ['fE', 'Einspeisevergütung', 30, 200, 5, v => `${v} % von 2025`],
+];
+$('regler').innerHTML = SEG.map(([k, n, opts]) => `<div class="regel"><span class="lbl">${n}</span><div class="segment" role="group" aria-label="${n}" data-k="${k}">${opts.map(([v, l]) => `<button type="button" data-v="${v}">${l}</button>`).join('')}</div></div>`).join('')
+  + RANGE.map(([k, n, mi, ma, sch, f, , rueck]) => `<div class="regel"><label for="r-${k}">${n}<output id="o-${k}"></output></label><input type="range" id="r-${k}" min="${mi}" max="${ma}" step="${sch}" value="${rueck ? rueck(st[k]) : st[k]}"></div>`).join('')
+  + `<button type="button" id="r-paketB" class="knopf">Empfehlung einstellen</button>`;
+$('regler').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'r-paketB') { Object.assign(st, { vt: 'dynamisch', hp: 'hinter', batt: 0, pI: 13, fP: 100, fE: 100 }); RANGE.forEach(([k, , , , , , , rueck]) => { $('r-' + k).value = rueck ? rueck(st[k]) : st[k]; }); rechne(); return; }
+  const g = b.closest('.segment'); if (!g || !g.dataset.k) return;
+  st[g.dataset.k] = b.dataset.v; rechne();
+});
+RANGE.forEach(([k, , , , , , hin]) => $('r-' + k).addEventListener('input', e => { st[k] = hin ? hin(+e.target.value) : +e.target.value; rechne(); }));
+
+function rechne() {
+  SEG.forEach(([k]) => document.querySelectorAll(`.segment[data-k="${k}"] button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(st[k])))));
+  RANGE.forEach(([k, , , , , f, , rueck]) => { $('o-' + k).textContent = f(rueck ? rueck(st[k]) : st[k]); });
+  $('r-bPreis').disabled = st.batt === 0;
+  const p = preise(st), p0 = preise({ ...st, pI: 0 });
+  const k = R[schluessel(st.vt, st.hp, st.batt, st.top4, st.autos, st.strat)];
+  const ref = R[schluessel('statisch', 'vor', 0, 'sofort', st.autos, 'sofort')];   // heute, gleiche Autos, laden sofort
+  const g = geld(k, p, st.batt * st.bPreis), gr = geld(ref, p0);
+  const vorteilHaus = gr.haus - g.haus;
+  $('r-tiles').innerHTML = [
+    ['Vorteil fürs Haus', `${vz(vorteilHaus)} €`, 'pro Jahr gegenüber heute', true],
+    ['PV-Strom für die Wohnungen', `${de(k.gen)} kWh`, `heute ${de(ref.gen)} kWh`],
+    ['Allgemeinstrom aus dem Netz', `${de(k.b)} kWh`, `heute ${de(ref.b)} kWh`],
+    ['Ins Netz eingespeist', `${de(k.rs)} kWh`, `heute ${de(ref.rs)} kWh`],
+  ].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  const diff = T.map((t, i) => g.netto[i] - gr.netto[i]);
+  balken('ch-tops', T.map((t, i) => ({ name: `Top ${t} (${anteile[i]})`, wert: diff[i],
+    tip: `<b>Top ${t}</b> · ${anteile[i]} Anteile<br>PV-Strom: ${de(k.e[i])} kWh (heute ${de(ref.e[i])})<br>Änderung: ${vz(diff[i])} €/Jahr<br>= ${vz(diff[i] / anteile[i], 2)} € je Anteil` })));
+  $('tb-tops').innerHTML = tabelle(['Top', 'Anteile', 'PV-Strom heute', 'PV-Strom neu', 'Zahlung an Hauskasse', 'Änderung/Jahr', 'je Anteil'],
+    T.map((t, i) => [`Top ${t}`, anteile[i], de(ref.e[i]) + ' kWh', de(k.e[i]) + ' kWh', de(k.e[i] * p.pI) + ' €', vz(diff[i]) + ' €', vz(diff[i] / anteile[i], 2) + ' €']),
+    ['Σ', de(summeAnteile), de(ref.gen) + ' kWh', de(k.gen) + ' kWh', de(g.intern) + ' €', vz(diff.reduce((a, b) => a + b, 0)) + ' €', '']);
+  $('tb-hk').innerHTML = tabelle(['', 'heute', 'Auswahl'], [
+    ['Interner PV-Preis von den Wohnungen', '0 €', de(g.intern) + ' €'],
+    ['Einspeisevergütung (Restüberschuss)', de(gr.einsp) + ' €', de(g.einsp) + ' €'],
+    ['Allgemeinstrom', '−' + de(gr.allg) + ' €', '−' + de(g.allg) + ' €'],
+    ['Batterie (jährliche Rate)', '–', g.rate ? '−' + de(g.rate) + ' €' : '–'],
+  ], ['Saldo', de(gr.hk) + ' €', de(g.hk) + ' €']);
+  // Zusatzkarte: Batterie oder E-Autos
+  let extra = '';
+  if (st.batt > 0) {
+    const ohne = R[schluessel(st.vt, st.hp, 0, st.top4, st.autos, st.strat)];
+    const ersp = geld(ohne, p).haus - geld(k, p).haus, lohnt = ersp * barwertFaktor / st.batt;
+    extra += `<h3>Batterie ${[0, 5, 10, 15, 20, 30].indexOf(st.batt) >= 0 ? st.batt : ''} kWh</h3>` + tabelle(['', ''], [
+      ['Entladen pro Jahr', de(k.bat.ent) + ' kWh'], ['Vollzyklen pro Jahr', de(k.bat.zyk)], ['Ersparnis durch die Batterie', de(ersp) + ' €/Jahr'],
+      ['Jährliche Rate bei ' + de(st.bPreis) + ' €/kWh', de(g.rate) + ' €/Jahr'], ['Lohnt sich bis', '<b>' + de(lohnt) + ' €/kWh</b>']]).replace(/class="n"/g, 'class="n"');
+  }
+  if (k.ev.length) {
+    extra += `<h3>E-Autos</h3>` + tabelle(['Auto', 'geladen', 'aus PV', 'Kosten/100 km'], k.ev.map(a => {
+      const kosten = ((a.gel - a.pv) * p.pT + a.pv * p.pI) / a.km * 100;
+      return [`${a.n} (Top ${a.top})`, de(a.gel) + ' kWh', de(a.pv / a.gel * 100) + ' %', de(kosten, 2) + ' €'];
+    }));
+  }
+  if (!extra) extra = `<h3>So liest man das</h3><p class="small">Positiv heißt: Das Top steht im Jahr besser da als heute – eigene Stromrechnung, Zahlung an die Hauskasse und Anteil am Ergebnis der Hauskasse zusammengerechnet. Die Summe über alle Tops ist der Vorteil fürs Haus; der interne PV-Preis verschiebt nur, wer wie viel davon bekommt.</p>`;
+  $('k-extra').innerHTML = extra;
+  $('druck-einst').innerHTML = 'Einstellung: ' + [...SEG.map(([kk, n, o]) => `${n}: ${o.find(x => x[0] === String(st[kk]))[1]}`), ...RANGE.map(([kk, n, , , , f, , rueck]) => `${n}: ${f(rueck ? rueck(st[kk]) : st[kk])}`)].join(' · ');
+}
+zeichne.push(rechne);
+
+// ------------------------------------------------------------ Kapitel 6: Batterie
+const BATT = [5, 10, 15, 20, 30];
+const kBohne = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 0)];
+const lohntBis = kw => { const mit = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0)]; return (geld(kBohne, stdP).haus - geld(mit, stdP).haus) * barwertFaktor / kw; };
+zeichne.push(() => balken('ch-batt', BATT.map(kw => ({ name: `${kw} kWh`, wert: lohntBis(kw), text: `${de(lohntBis(kw))} €/kWh`,
+  tip: `<b>Batterie ${kw} kWh</b><br>lohnt sich bis ${de(lohntBis(kw))} €/kWh<br>= ${de(lohntBis(kw) * kw)} € Gesamtpreis` })),
+  { einheit: '€/kWh', linie: W.batterie_preis, linieText: `Platzhalter ${de(W.batterie_preis)} €/kWh` }));
+$('batt-text').textContent = `Barwert über ${W.lebensdauer} Jahre bei ${W.zins} % Zins, Strompreis +2 %/Jahr, Alterung −2 %/Jahr. Mit dynamischer Verteilung und Heizpatrone hinter den Wohnungen; Batterie lädt nach den Wohnungen und vor der Heizpatrone. Liegt ein Angebot unter dem Balken, rechnet sich die Batterie.`;
+const kNachTops = R[schluessel('dynamisch', 'vor', 10, 'sofort', 0)], kDyn0 = R[schluessel('dynamisch', 'vor', 0, 'sofort', 0)];
+const kVorHP = R[schluessel('dynamisch', 'hinter', 10, 'sofort', 0)];
+const e1 = geld(kDyn0, stdP).haus - geld(kNachTops, stdP).haus, e2 = geld(kBohne, stdP).haus - geld(kVorHP, stdP).haus;
+$('tb-batt').innerHTML = tabelle(['10-kWh-Batterie lädt …', 'Ersparnis/Jahr', 'lohnt bis'], [
+  ['nur aus dem Restüberschuss', de(e1) + ' €', de(e1 * barwertFaktor / 10) + ' €/kWh'],
+  ['nach den Wohnungen, vor der Heizpatrone', de(e2) + ' €', de(e2 * barwertFaktor / 10) + ' €/kWh']]);
+
+// ------------------------------------------------------------ Kapitel 7: E-Autos
+const evZeilen = [];
+for (const strat of ['sofort', 'pv']) {
+  const k = R[schluessel('dynamisch', 'hinter', 0, 'sofort', 4, strat)];
+  k.ev.slice(1).forEach(a => evZeilen.push({ a, strat }));
+}
+const evNamen = { pendler: 'Pendler', homeoffice: 'Homeoffice', wenigfahrer: 'Wenigfahrer', top4: 'Top 4' };
+zeichne.push(() => balken('ch-ev', evZeilen.map(({ a, strat }) => ({ name: `${evNamen[a.p]} ${strat === 'pv' ? '· PV' : '· sofort'}`, wert: a.pv / a.gel * 100, farbe: strat === 'pv' ? FARBE.tops : FARBE.rest,
+  text: `${de(a.pv / a.gel * 100)} %`, tip: `<b>${a.n}, ${evNamen[a.p]}</b><br>${strat === 'pv' ? 'PV-Überschussladen' : 'lädt sofort'}<br>${de(a.km)} km, ${de(a.gel)} kWh geladen<br>davon ${de(a.pv)} kWh aus PV` })), { einheit: '%' }));
+legende('lg-ev', [['lädt sofort', FARBE.rest], ['mit PV-Überschuss', FARBE.tops]]);
+
+// ------------------------------------------------------------ Kapitel 8: Empfehlung
+const vB = vorteil(kB), vDyn = vorteil(kDyn);
+$('empf-liste').innerHTML = [
+  `<div><h3>Heizpatrone hinter die Wohnungen stellen</h3><p>Eine Einstellung am Smartfox. Bringt zusammen mit der dynamischen Verteilung <b>${vz(vB)} € pro Jahr</b> – ohne Investition. Mit der Installationsfirma klären, wie die Heizpatrone erst den Überschuss nach den Wohnungen bekommt.</p></div>`,
+  `<div><h3>Auf dynamische Verteilung umstellen</h3><p>Beim Netzbetreiber beantragen. Allein ${vz(vDyn)} € pro Jahr, und sie ist die Voraussetzung dafür, dass E-Autos und Heizpatronen-Umstellung bei den Wohnungen ankommen.</p></div>`,
+  `<div><h3>Einen internen PV-Preis von etwa 13 ct beschließen</h3><p>Dann verteilt sich der Vorteil fast genau nach den Anteilen, und kein Top steht schlechter da als heute. Umsatzsteuer-Frage vorher mit der Hausverwaltung klären.</p></div>`,
+  `<div><h3>Batterie: Angebot einholen, wenn es passt</h3><p>Eine 10-kWh-Batterie lohnt sich bis etwa <b>${de(Math.round(lohntBis(10) / 10) * 10)} €/kWh</b> (inkl. eigenem Batteriewechselrichter und Montage). Wichtig: Sie muss vor der Heizpatrone laden dürfen.</p></div>`,
+  `<div><h3>E-Autos: Wallboxen mit PV-Überschussladen</h3><p>Spart rund 100 € pro Auto und Jahr. Vorher die Anschlussleistung (6 kW je Wohnung, Hausanschluss) mit Netzbetreiber und Elektriker klären.</p></div>`,
+].map(x => `<li>${x}</li>`).join('');
+
+// ------------------------------------------------------------ Anhang
+const pr = D.pruef;
+$('pruef').innerHTML = `<p class="stempel">Alle Kontrollen bestanden</p>` + tabelle(['Kontrolle', 'Ergebnis'], [
+  ['Netzbezug Allgemein 2025: Rechnung / Daten', `${de(pr.k1.bezug_rechnung, 2)} / ${de(pr.k1.bezug_daten, 1)} kWh`],
+  ['Einspeisung 2025: Rechnung / Daten', `${de(pr.k1.einsp_rechnung, 2)} / ${de(pr.k1.einsp_daten, 1)} kWh`],
+  ['Verteilung des Netzbetreibers nachgerechnet', `${de(pr.k9_werte)} Werte, größte Abweichung ${de(pr.k9_max_wh, 1)} Wh`],
+  ['E-Auto-Modell geeicht an Top 4', '1.656 kWh simuliert / 1.654 kWh gemessen'],
+  ['Viertelstunden mit geschätzter PV (Smartfox-Lücken)', de(pr.anteil_geschaetzt * 100, 1) + ' %'],
+]);
+$('tb-annahmen').innerHTML = tabelle(['Annahme', 'Wert'], [
+  ['Strompreis Allgemein (brutto)', de(P0.allgemein_ct, 2) + ' ct/kWh'], ['Strompreis Wohnung (brutto)', `${de(P0.top_ct, 2)} ct, Sommer 10–16 Uhr ${de(P0.top_snap_ct, 2)} ct`],
+  ['Einspeisevergütung', `Monatswerte 2025, Ø ${de(eAvg, 2)} ct`], ['Wärmepumpe COP im Betrieb', '3,5 (Typenschild 4,3 bei 35 °C)'],
+  ['Heizpatronen-Wärme ersetzt Wärmepumpe', 'Okt–Apr 60 %, Mai–Sep 20 % (aus Daten geschätzt)'],
+  ['Batterie', 'Wirkungsgrad 90 %, 20 W Eigenverbrauch, 15 Jahre, 3 % Zins'],
+  ['E-Autos', '18 kWh/100 km (Winter +25 %), 11 kW, 10 % Ladeverluste'],
+]);
+$('fuss').innerHTML = `Erstellt am ${new Date(D.erstellt).toLocaleDateString('de-AT')} aus den Messdaten ${D.referenzjahr}. Alle Beträge brutto pro Jahr; Grund- und Messpreise ändern sich durch die Maßnahmen nicht und sind nicht enthalten.`;
+
+// ------------------------------------------------------------ Zeichnen (und bei Größenänderung neu)
+zeichne.forEach(f => f());
+let warte = null, letzteBreite = innerWidth;
+addEventListener('resize', () => { if (innerWidth === letzteBreite) return; letzteBreite = innerWidth; clearTimeout(warte); warte = setTimeout(() => zeichne.forEach(f => f()), 150); });
+
+// ------------------------------------------------------------ Kapitelleiste
+const kap = [...document.querySelectorAll('section.kap')];
+$('navliste').innerHTML = kap.map(s => `<a href="#${s.id}" data-id="${s.id}">${esc(s.dataset.nav)}</a>`).join('');
+const navs = [...document.querySelectorAll('nav.kapitel a')];
+const beob = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) navs.forEach(a => a.classList.toggle('aktiv', a.dataset.id === e.target.id)); }), { rootMargin: '-40% 0px -55% 0px' });
+kap.forEach(s => beob.observe(s));
+})();
+</script>

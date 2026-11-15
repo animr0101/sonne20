@@ -1,0 +1,108 @@
+{
+  "_hinweis": "Alle Standardwerte und Annahmen an einer Stelle. Jeder Wert hat eine Quelle oder ist als Annahme markiert. Preise brutto (inkl. 20 % USt), sofern nicht anders angegeben.",
+
+  "daten": {
+    "allgemein": "Allgemein",
+    "eda": "EDA",
+    "smartfox_tage": "Smartfox_Automatisch/1_Tages_Rohdaten",
+    "referenzjahr": 2025,
+    "jahre": [2024, 2025, 2026]
+  },
+
+  "haus": {
+    "tops": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "anteile_1107": {"1": 108, "2": 70, "3": 101, "4": 145, "5": 88, "6": 69, "7": 88, "8": 122, "9": 136, "10": 180},
+    "_anteile_quelle": "Tabelle Anteile (WHG + TG), von Lukas",
+    "schluessel_hallag_prozent": {"1": 9.6883, "2": 6.2736, "3": 9.0530, "4": 13.0038, "5": 7.8916, "6": 6.1842, "7": 7.8916, "8": 10.9391, "9": 12.1997, "10": 16.8751},
+    "_schluessel_quelle": "aus EDA-Daten 12/2024–08/2026 zurückgerechnet",
+    "teilnahmefaktor_prozent": {"1": 100, "2": 100, "3": 100, "4": 100, "5": 100, "6": 100, "7": 100, "8": 100, "9": 100, "10": 17},
+    "netzbereitstellung_kw": {"allgemein": 25, "wohnung": 6},
+    "_netzbereitstellung_quelle": "Rechnungen HALLAG (Allgemein 2025, Top 3 09/2026)"
+  },
+
+  "anlage": {
+    "wechselrichter": "SolarEdge SE25K, 25 kVA, kein Hybrid-Wechselrichter",
+    "waermepumpe": "Hoval Thermalia dual H (35), Sole/Wasser, 2 Verdichter, Bj. 2017",
+    "waermepumpe_cop_typenschild_B0W35": 4.28,
+    "puffer": "Hoval CombiSol R (1400), 1.350 l, einziger Speicher (Heizung + Warmwasser)",
+    "puffer_liter": 1350,
+    "puffer_waermeverlust_w": 107,
+    "heizpatrone_max_kw": 6.0,
+    "_heizpatrone_quelle": "Smartfox-Messwerte (max. ~6 kW, endet bei ~60 °C)"
+  },
+
+  "erkennung_waermepumpe": {
+    "schwelle_ueber_grundlast_w": 2500,
+    "grundlast_max_w": 2500,
+    "_erklaerung": "Wärmepumpe gilt als laufend, wenn der Allgemeinverbrauch mehr als 2,5 kW über der Tages-Grundlast liegt (Stufe 1 ≈ 4,7 kW, Stufe 2 ≈ 10 kW gemessen)."
+  },
+
+  "preise": {
+    "ust_prozent": 20,
+    "bezug_allgemein_ct_netto": 21.48,
+    "_bezug_allgemein_quelle": "Jahresrechnung Allgemein 2025: Energie 12,69 + Netz 5,99 + Verlust 0,472 + Elektrizitätsabgabe 1,50 + Erneuerbaren-Förderbeitrag ~0,83",
+    "bezug_top_ct_netto": 18.46,
+    "bezug_top_snap_ct_netto": 17.10,
+    "_bezug_top_quelle": "Monatsrechnung Top 3, 09/2026: Energie 10,40 + Netz 6,81 (SNAP 5,45) + Verlust 0,293 + EFB ~0,86 + Elektrizitätsabgabe 0,10",
+    "snap_monate": [4, 5, 6, 7, 8, 9],
+    "snap_stunden": [10, 16],
+    "einspeisung_ct_monat_2025": {"1": 10.2165, "2": 10.2165, "3": 6.3074, "4": 6.1478, "5": 6.1478, "6": 6.1478, "7": 6.2633, "8": 6.1866, "9": 6.1866, "10": 9.5304, "11": 9.6254, "12": 9.6254},
+    "_einspeisung_quelle": "Jahresrechnung Einspeisung 2025 (Energie + 5 % Bonus), keine USt",
+    "interner_pv_preis_ct": 12.0,
+    "_interner_pv_preis": "ANNAHME – Regler, sinnvoller Bereich ca. 7–22 ct",
+    "preissteigerung_prozent_jahr": 2.0
+  },
+
+  "kontrollwerte_rechnungen": {
+    "2024": {"bezug_allgemein_kwh": 15131.14, "einspeisung_kwh": 15323.50},
+    "2025": {"bezug_allgemein_kwh": 15193.86, "einspeisung_kwh": 16327.25}
+  },
+
+  "waerme": {
+    "cop_betrieb": 3.5,
+    "_cop": "ANNAHME – Typenschild 4,3 bei 35 °C; Puffer wird auf 40–60 °C geheizt, daher niedriger",
+    "ersatzfaktor_heizpatrone_monat": {"1": 0.6, "2": 0.6, "3": 0.6, "4": 0.6, "5": 0.2, "6": 0.2, "7": 0.2, "8": 0.2, "9": 0.2, "10": 0.6, "11": 0.6, "12": 0.6},
+    "_ersatzfaktor": "Anteil der Heizpatronen-Wärme, die sonst die Wärmepumpe liefern müsste. Geschätzt aus den Tagesdaten 2024–2026 (Regression mit Monatseffekten): gesamt 0,63 ± 0,35, Sommer 0,21 ± 0,38. Ohne Außentemperatur eher überschätzt. Bandbreite 0–1 wird mitgerechnet.",
+    "wp_max_kwh_viertelstunde": 2.6,
+    "_wp_max": "beide Verdichter ≈ 10–10,5 kW elektrisch (gemessen)"
+  },
+
+  "batterie": {
+    "kapazitaet_kwh": 10,
+    "ladeleistung_kw": 10,
+    "entladeleistung_kw": 10,
+    "wirkungsgrad_prozent": 90,
+    "reserve_prozent": 0,
+    "standby_w": 20,
+    "_standby": "ANNAHME – Eigenverbrauch Batteriewechselrichter/Steuerung",
+    "reihenfolge": "nach_tops",
+    "_reihenfolge": "nach_tops = lädt nur aus dem Restüberschuss; vor_tops / vor_heizpatrone wählbar",
+    "alterung_prozent_jahr": 2,
+    "anschluss": "AC-gekoppelt (eigener Batteriewechselrichter)",
+    "versorgt": "nur_allgemein",
+    "_annahme": "ANNAHME – Standardwerte bis zum Angebot"
+  },
+
+  "e_auto": {
+    "akku_kwh": 60,
+    "verbrauch_kwh_100km": 18,
+    "winterzuschlag_prozent": 25,
+    "km_jahr": 12000,
+    "ziel_soc_prozent": 80,
+    "min_soc_prozent": 30,
+    "max_ladeleistung_kw": 11,
+    "min_ladeleistung_kw": 4.1,
+    "phasenumschaltung": false,
+    "ladeverluste_prozent": 10,
+    "_annahme": "ANNAHME – Standardwerte, pro Auto einstellbar"
+  },
+
+  "wirtschaftlichkeit": {
+    "batterie_preis_eur_pro_kwh": 700,
+    "_batterie_preis": "ANNAHME – Platzhalter bis Angebot (brutto inkl. Montage, AC-gekoppelt)",
+    "foerderung_eur": 0,
+    "lebensdauer_jahre": 15,
+    "zinssatz_prozent": 3,
+    "wartung_eur_jahr": 0
+  }
+}
