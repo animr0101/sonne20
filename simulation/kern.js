@@ -319,6 +319,7 @@
           // Smartfox-Einstellungen: Reserve (Überschuss bis X kW bleibt für die Verteilung), Monate ohne Heizpatrone
           let frei = pool;
           if (H.reserve_kw) frei = Math.max(0, pool - H.reserve_kw * 250);
+          if (H.schwelle_kw && pool < H.schwelle_kw * 250) frei = 0;   // Einschaltschwelle: erst ab X kW, dann alles
           if (H.aus_monate && H.aus_monate.includes(m)) frei = 0;
           hp = Math.min(hp0, frei); pool -= hp;
           const fehlt = hp0 - hp;
