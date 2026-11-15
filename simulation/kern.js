@@ -321,6 +321,7 @@
           if (H.reserve_kw) frei = Math.max(0, pool - H.reserve_kw * 250);
           if (H.schwelle_kw && pool < H.schwelle_kw * 250) frei = 0;   // Einschaltschwelle: erst ab X kW, dann alles
           if (H.aus_monate && H.aus_monate.includes(m)) frei = 0;
+          if (H.aus_stunden && H.aus_stunden.includes(stunde[i])) frei = 0;   // Zeitsperre (Uhrzeit)
           hp = Math.min(hp0, frei); pool -= hp;
           const fehlt = hp0 - hp;
           sum.waerme_fehlt += fehlt;
