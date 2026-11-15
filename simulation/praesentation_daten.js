@@ -25,13 +25,13 @@ const NEU = [
   { name: 'Auto D', top: '6', profil: 'wenigfahrer', km_jahr: 6000, seed: 14 },
 ];
 
-function einstellung({ vt, hp, batt, autos, strat, top4, tf10 = null }) {
+function einstellung({ vt, hp, batt, autos, strat, top4, tf10 = null, bv = 'allgemein' }) {
   const s = K.ausKonfiguration(CFG);
   s.verteilung.modell = vt;
   if (tf10 !== null) s.verteilung.teilnahme['10'] = tf10;
   s.reihenfolge = hp === 'hinter' ? ['tops', 'heizpatrone'] : ['heizpatrone', 'tops'];
   if (batt > 0) {
-    s.batterie = K.batterie({ kapazitaet_kwh: batt, leistung_kw: leistung(batt) });
+    s.batterie = K.batterie({ kapazitaet_kwh: batt, leistung_kw: leistung(batt), versorgt: bv });
     s.reihenfolge = hp === 'hinter' ? K.REIHENFOLGEN.tops_batterie_heizpatrone : K.REIHENFOLGEN.nach_tops;
   }
   s.eautos = [];
@@ -49,7 +49,7 @@ function kennzahlen(r) {
     v: T.map(t => r1(r.tops[t].verbrauch)), vs: T.map(t => r1(r.tops[t].verbrauch_snap)),
     e: T.map(t => r1(r.tops[t].genutzt)), es: T.map(t => r1(r.tops[t].genutzt_snap)),
     hp: r1(r.waerme.heizpatrone), wpn: r1(r.waerme.wp_nachheizen),
-    bat: r.batterie ? { ent: r1(r.batterie.entladung), zyk: Math.round(r.batterie.vollzyklen) } : null,
+    bat: r.batterie ? { ent: r1(r.batterie.entladung), zyk: Math.round(r.batterie.vollzyklen), tops: r1(r.summe.entladung_tops) } : null,
     ev: r.eautos.map(a => ({ n: a.name, top: a.top, p: a.profil, gel: r1(a.geladen), pv: r1(a.aus_pv), km: Math.round(a.km) })),
     spitze: r1(r.eauto_spitze_kw),
     gen: r1(r.summe.genutzt), rs: r1(r.summe.rest),
@@ -61,11 +61,13 @@ function raster() {
   let n = 0;
   for (const vt of ['statisch', 'dynamisch']) for (const hp of ['vor', 'hinter']) for (const batt of BATT)
     for (const top4 of ['sofort', 'pv']) for (let autos = 0; autos <= NEU.length; autos++)
-      for (const strat of autos === 0 ? ['sofort'] : ['sofort', 'pv']) {
-        const key = [vt, hp, batt, top4, autos, strat].join('|');
-        out[key] = kennzahlen(K.simuliere(D, einstellung({ vt, hp, batt, autos, strat, top4 })));
-        if (++n % 50 === 0) process.stderr.write(`  ${n} Szenarien …\n`);
-      }
+      for (const strat of autos === 0 ? ['sofort'] : ['sofort', 'pv'])
+        for (const bv of batt === 0 ? ['allgemein'] : ['allgemein', 'allgemein_und_tops']) {
+          // Schlüssel: Verteilung | Heizpatrone | Batterie kWh | Top 4 | weitere Autos | Ladestrategie | Batterie versorgt
+          const key = [vt, hp, batt, top4, autos, strat, bv].join('|');
+          out[key] = kennzahlen(K.simuliere(D, einstellung({ vt, hp, batt, autos, strat, top4, bv })));
+          if (++n % 100 === 0) process.stderr.write(`  ${n} Szenarien …\n`);
+        }
   return out;
 }
 

@@ -107,6 +107,7 @@ tr.summe td { font-weight: 700; border-top: 2px solid var(--line); }
 /* Umschalter und Regler */
 .segment { display: inline-flex; background: var(--line-2); border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap; }
 .segment button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.segment button:disabled { opacity: 0.45; cursor: not-allowed; }
 .segment button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .regler { display: grid; gap: 14px; }
 .regel { display: grid; gap: 6px; }
@@ -233,7 +234,9 @@ footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var
     <div class="karte"><h3>Wichtig: Wovon die Batterie lädt</h3>
       <p>Lädt die Batterie nur aus dem Strom, der sonst ins Netz ginge, steht sie im Winter fast leer – dann nimmt die Heizpatrone alles. Lädt sie <b>vor</b> der Heizpatrone (nach den Wohnungen), bekommt sie das ganze Jahr Strom.</p>
       <div class="tab-scroll" id="tb-batt"></div>
-      <p class="small">Wechselrichter SolarEdge SE25K ist kein Hybrid-Wechselrichter: Die Batterie braucht einen eigenen Batteriewechselrichter (im Preis pro kWh enthalten zu denken).</p></div>
+      <p class="small">Wechselrichter SolarEdge SE25K ist kein Hybrid-Wechselrichter: Die Batterie braucht einen eigenen Batteriewechselrichter (im Preis pro kWh enthalten zu denken).</p>
+      <p>Gerechnet ist, dass die Batterie <b>nur den Allgemeinstrom</b> versorgt; die Wohnungen profitieren über die Hauskasse. Ob sie auch die Wohnungen direkt versorgen darf, ist rechtlich offen – das Ergebnis ändert sich dadurch kaum:</p>
+      <div class="tab-scroll" id="tb-bv"></div></div>
   </div>
 </div></section>
 
@@ -395,7 +398,7 @@ const W = D.wirtschaft;
 const anteile = D.anteile, summeAnteile = anteile.reduce((a, b) => a + b, 0);
 const annuitaet = inv => { const z = W.zins / 100; return inv * z / (1 - (1 + z) ** -W.lebensdauer); };
 const barwertFaktor = (() => { let f = 0; for (let j = 1; j <= W.lebensdauer; j++) f += (1.02 * 0.98) ** (j - 1) / (1 + W.zins / 100) ** j; return f; })();
-const schluessel = (vt, hp, batt, top4, autos, strat) => [vt, hp, batt, top4, autos, autos === 0 ? 'sofort' : strat].join('|');
+const schluessel = (vt, hp, batt, top4, autos, strat, bv = 'allgemein') => [vt, hp, batt, top4, autos, autos === 0 ? 'sofort' : strat, batt > 0 ? bv : 'allgemein'].join('|');
 function preise(st) {
   return { pA: P0.allgemein_ct / 100 * st.fP / 100, pT: P0.top_ct / 100 * st.fP / 100, pS: P0.top_snap_ct / 100 * st.fP / 100,
     einsp: P0.einspeisung_ct.map(c => c / 100 * st.fE / 100), pI: st.pI / 100 };
@@ -505,12 +508,13 @@ $('hp-tiles').innerHTML = [
 ].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
 
 // ------------------------------------------------------------ Kapitel 5: Rechner
-const st = { vt: 'dynamisch', hp: 'hinter', batt: 0, bPreis: W.batterie_preis, autos: 0, strat: 'pv', top4: 'sofort', pI: 13, fP: 100, fE: 100 };
+const st = { vt: 'dynamisch', hp: 'hinter', batt: 0, bv: 'allgemein', bPreis: W.batterie_preis, autos: 0, strat: 'pv', top4: 'sofort', pI: 13, fP: 100, fE: 100 };
 const SEG = [
   ['vt', 'Verteilung', [['statisch', 'fix (heute)'], ['dynamisch', 'dynamisch']]],
   ['hp', 'Heizpatrone', [['vor', 'vor den Wohnungen (heute)'], ['hinter', 'hinter den Wohnungen']]],
   ['top4', 'E-Auto Top 4 lädt', [['sofort', 'sofort (heute)'], ['pv', 'mit PV-Überschuss']]],
   ['strat', 'Weitere E-Autos laden', [['sofort', 'sofort'], ['pv', 'mit PV-Überschuss']]],
+  ['bv', 'Batterie versorgt (rechtlich offen)', [['allgemein', 'nur Allgemeinstrom'], ['allgemein_und_tops', 'auch die Wohnungen']]],
 ];
 const RANGE = [
   ['batt', 'Batterie', 0, 5, 1, v => v ? `${[0, 5, 10, 15, 20, 30][v]} kWh` : 'keine', v => [0, 5, 10, 15, 20, 30][v], v => [0, 5, 10, 15, 20, 30].indexOf(v)],
@@ -525,7 +529,7 @@ $('regler').innerHTML = SEG.map(([k, n, opts]) => `<div class="regel"><span clas
   + `<button type="button" id="r-paketB" class="knopf">Empfehlung einstellen</button>`;
 $('regler').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.id === 'r-paketB') { Object.assign(st, { vt: 'dynamisch', hp: 'hinter', batt: 0, pI: 13, fP: 100, fE: 100 }); RANGE.forEach(([k, , , , , , , rueck]) => { $('r-' + k).value = rueck ? rueck(st[k]) : st[k]; }); rechne(); return; }
+  if (b.id === 'r-paketB') { Object.assign(st, { vt: 'dynamisch', hp: 'hinter', batt: 0, bv: 'allgemein', pI: 13, fP: 100, fE: 100 }); RANGE.forEach(([k, , , , , , , rueck]) => { $('r-' + k).value = rueck ? rueck(st[k]) : st[k]; }); rechne(); return; }
   const g = b.closest('.segment'); if (!g || !g.dataset.k) return;
   st[g.dataset.k] = b.dataset.v; rechne();
 });
@@ -535,14 +539,15 @@ function rechne() {
   SEG.forEach(([k]) => document.querySelectorAll(`.segment[data-k="${k}"] button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(st[k])))));
   RANGE.forEach(([k, , , , , f, , rueck]) => { $('o-' + k).textContent = f(rueck ? rueck(st[k]) : st[k]); });
   $('r-bPreis').disabled = st.batt === 0;
+  document.querySelectorAll('.segment[data-k="bv"] button').forEach(b => { b.disabled = st.batt === 0; });
   const p = preise(st), p0 = preise({ ...st, pI: 0 });
-  const k = R[schluessel(st.vt, st.hp, st.batt, st.top4, st.autos, st.strat)];
+  const k = R[schluessel(st.vt, st.hp, st.batt, st.top4, st.autos, st.strat, st.bv)];
   const ref = R[schluessel('statisch', 'vor', 0, 'sofort', st.autos, 'sofort')];   // heute, gleiche Autos, laden sofort
   const g = geld(k, p, st.batt * st.bPreis), gr = geld(ref, p0);
   const vorteilHaus = gr.haus - g.haus;
   $('r-tiles').innerHTML = [
     ['Vorteil fürs Haus', `${vz(vorteilHaus)} €`, 'pro Jahr gegenüber heute', true],
-    ['PV-Strom für die Wohnungen', `${de(k.gen)} kWh`, `heute ${de(ref.gen)} kWh`],
+    [st.batt > 0 && st.bv !== 'allgemein' ? 'Sonnenstrom für die Wohnungen (inkl. Batterie)' : 'PV-Strom für die Wohnungen', `${de(k.gen)} kWh`, `heute ${de(ref.gen)} kWh`],
     ['Allgemeinstrom aus dem Netz', `${de(k.b)} kWh`, `heute ${de(ref.b)} kWh`],
     ['Ins Netz eingespeist', `${de(k.rs)} kWh`, `heute ${de(ref.rs)} kWh`],
   ].map(([a, b, c, h]) => `<div class="tile${h ? ' haupt' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
@@ -564,7 +569,7 @@ function rechne() {
     const ohne = R[schluessel(st.vt, st.hp, 0, st.top4, st.autos, st.strat)];
     const ersp = geld(ohne, p).haus - geld(k, p).haus, lohnt = ersp * barwertFaktor / st.batt;
     extra += `<h3>Batterie ${[0, 5, 10, 15, 20, 30].indexOf(st.batt) >= 0 ? st.batt : ''} kWh</h3>` + tabelle(['', ''], [
-      ['Entladen pro Jahr', de(k.bat.ent) + ' kWh'], ['Vollzyklen pro Jahr', de(k.bat.zyk)], ['Ersparnis durch die Batterie', de(ersp) + ' €/Jahr'],
+      ['Entladen pro Jahr', de(k.bat.ent) + ' kWh'], ['davon an die Wohnungen', de(k.bat.tops || 0) + ' kWh'], ['Vollzyklen pro Jahr', de(k.bat.zyk)], ['Ersparnis durch die Batterie', de(ersp) + ' €/Jahr'],
       ['Jährliche Rate bei ' + de(st.bPreis) + ' €/kWh', de(g.rate) + ' €/Jahr'], ['Lohnt sich bis', '<b>' + de(lohnt) + ' €/kWh</b>']]).replace(/class="n"/g, 'class="n"');
   }
   if (k.ev.length) {
@@ -593,6 +598,13 @@ const e1 = geld(kDyn0, stdP).haus - geld(kNachTops, stdP).haus, e2 = geld(kBohne
 $('tb-batt').innerHTML = tabelle(['10-kWh-Batterie lädt …', 'Ersparnis/Jahr', 'lohnt bis'], [
   ['nur aus dem Restüberschuss', de(e1) + ' €', de(e1 * barwertFaktor / 10) + ' €/kWh'],
   ['nach den Wohnungen, vor der Heizpatrone', de(e2) + ' €', de(e2 * barwertFaktor / 10) + ' €/kWh']]);
+
+const bvZeilen = [10, 20].map(kw => {
+  const a = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0, 'sofort', 'allgemein')], b = R[schluessel('dynamisch', 'hinter', kw, 'sofort', 0, 'sofort', 'allgemein_und_tops')];
+  const ea = geld(kBohne, stdP).haus - geld(a, stdP).haus, eb = geld(kBohne, stdP).haus - geld(b, stdP).haus;
+  return [`${kw} kWh`, de(ea) + ' €', de(eb) + ' €', vz(eb - ea) + ' €'];
+});
+$('tb-bv').innerHTML = tabelle(['Batterie', 'nur Allgemeinstrom', 'auch Wohnungen', 'Unterschied'], bvZeilen);
 
 // ------------------------------------------------------------ Kapitel 7: E-Autos
 const evZeilen = [];
