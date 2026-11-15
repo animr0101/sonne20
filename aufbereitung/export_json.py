@@ -56,6 +56,8 @@ def main():
             "zeit": [int(t.strftime("%Y%m%d%H%M")) for t in df.index],
             "geschaetzt": (df["sf_status"] == "geschaetzt").astype(int).tolist(),
             "temp": np.rint(df["temp_mittel"].fillna(-1) * 10).astype(int).tolist(),
+            "aussen": np.rint(df["aussen"].fillna(-999) * 10).astype(int).tolist(),   # Zehntelgrad, -9990 = fehlt
+            "strahlung": np.rint(df["strahlung"].fillna(0)).astype(int).tolist(),     # W/m²
         }
         for name, spalte in FELDER.items():
             out[name] = wh(df[spalte])

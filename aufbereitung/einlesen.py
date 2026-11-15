@@ -158,6 +158,24 @@ def lade_smartfox():
     return sf[~sf.index.duplicated()].sort_index()
 
 
+# --------------------------------------------------------------------------- Wetter (GeoSphere Austria)
+def lade_wetter():
+    """Stundenwerte Lufttemperatur (tl, °C) und Globalstrahlung (cglo, W/m²) von GeoSphere Austria.
+    Hauptquelle Station Innsbruck Flughafen (175), Lücken aus Innsbruck Universität (39) minus mittlerer Differenz.
+    Zeit in UTC → auf Ortszeit (wie die Zählerdaten) umgerechnet. Fehlt der Ordner, wird ohne Wetter gerechnet."""
+    ordner = ROOT / "daten_wetter"
+    if not list(ordner.glob("innsbruck_flughafen_stuendlich_*.csv")):
+        return None
+    lies = lambda muster: pd.concat([pd.read_csv(f, parse_dates=["time"]) for f in sorted(ordner.glob(muster))]).set_index("time")
+    fh, uni = lies("innsbruck_flughafen_stuendlich_*.csv"), lies("innsbruck_uni_stuendlich_*.csv").reindex(lies("innsbruck_flughafen_stuendlich_*.csv").index)
+    beide = fh["tl"].notna() & uni["tl"].notna()
+    diff = (uni["tl"] - fh["tl"])[beide].mean()
+    w = pd.DataFrame({"aussen": fh["tl"].fillna(uni["tl"] - diff), "strahlung": fh["cglo"].fillna(uni["cglo"])})
+    w["aussen"] = w["aussen"].interpolate(limit=6)
+    w.index = w.index.tz_convert("Europe/Vienna").tz_localize(None)
+    return w[~w.index.duplicated()]
+
+
 # --------------------------------------------------------------------------- Zusammenführen
 def soll_index(start, ende):
     idx = pd.date_range(start, ende, freq="15min")
@@ -216,7 +234,7 @@ def zusammenfuehren(allg, eda, sf):
 
 
 SPALTEN = (["bezug_allg", "einspeisung", "rest", "pv", "heizpatrone", "verbrauch_allg", "wp", "grundlast_allg",
-            "temp_mittel", "temp_max", "relais_wp", "sf_netz_bezug", "sf_netz_einsp", "pv_korrektur",
+            "temp_mittel", "temp_max", "relais_wp", "aussen", "strahlung", "sf_netz_bezug", "sf_netz_einsp", "pv_korrektur",
             "eda_G", "eda_R"]
            + [f"{k}_{t}" for t in TOPS for k in ("v", "vt", "a", "e")]
            + ["allg_status", "sf_status"])
@@ -231,6 +249,9 @@ def main():
     print("Lese Smartfox …", file=sys.stderr)
     sf = lade_smartfox()
     df = zusammenfuehren(allg, eda, sf)
+    w = lade_wetter()
+    if w is not None:   # Stundenwert gilt für alle vier Viertelstunden der Stunde
+        df = df.join(w.reindex(df.index.floor("h")).set_axis(df.index))
     for c in SPALTEN:
         if c not in df:
             df[c] = np.nan
